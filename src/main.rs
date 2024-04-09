@@ -49,7 +49,7 @@ mod tests {
         let mut con = connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
 
         let test_product = open_food_facts::sdk::search_openff("Kölln Flocken").await.unwrap().products.first().unwrap().clone();
-        //dbg!(test_product.clone());
+        dbg!(test_product.clone());
         //test_product.save(&mut con).expect("DIDNT SAVE");
         let test_product = open_food_facts::sdk::search_openff("Nutella").await.unwrap().products.first().unwrap().clone();
         dbg!(test_product.clone());

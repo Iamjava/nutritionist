@@ -37,7 +37,6 @@ pub(crate) fn default_fetch_all<T: for<'a> serde::Deserialize<'a>>(con: &mut red
     // Hier wird noch der default_fetch_all verwendet, der nur die keys holt
     // sollte mal gegen den aktuellen user getauschtwerden, der dann die keys mit SMEMBERS holt
     let keys: Vec<String> = redis::Cmd::keys(key).query(con).unwrap();
-    dbg!(&keys);
     let mut items: Vec<T> = vec![];
     for key in keys {
         let item = default_fetch(con, key);
