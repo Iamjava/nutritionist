@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  keydb:
+    image: eqalpha/keydb:latest
+    ports:
+      - "6379:6379"
+    volumes:
+        - ./local-data:/data:z
+        - ./redis.conf:/etc/keydb/keydb.conf:z
