@@ -1,16 +1,18 @@
 mod open_food_facts;
 mod db;
 mod models;
+mod app;
 
 #[tokio::main]
 async fn main() {
+    app::server::serve().await;
 }
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
     use crate::models::models;
     use uuid::Uuid;
-    use crate::models::models::RedisInterface;
+    use crate::models::models::RedisORM;
     use crate::db::connector;
     use crate::open_food_facts;
 
@@ -49,13 +51,19 @@ mod tests {
         let mut con = connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
 
         let test_product = open_food_facts::sdk::search_openff("Kölln Flocken").await.unwrap().products.first().unwrap().clone();
-        dbg!(test_product.clone());
-        //test_product.save(&mut con).expect("DIDNT SAVE");
+        test_product.save(&mut con).expect("DIDNT SAVE");
         let test_product = open_food_facts::sdk::search_openff("Nutella").await.unwrap().products.first().unwrap().clone();
-        dbg!(test_product.clone());
         test_product.save(&mut con).expect("DIDNT SAVE");
 
+        let test_product = open_food_facts::sdk::search_openff("ja lasagne").await.unwrap().products.first().unwrap().clone();
+        test_product.save(&mut con).expect("DIDNT SAVE");
 
+        let test_product = open_food_facts::sdk::search_openff("lasagne").await.unwrap().products.first().unwrap().clone();
+        test_product.save(&mut con).expect("DIDNT SAVE");
+        let test_product = open_food_facts::sdk::search_openff("Brot").await.unwrap().products.first().unwrap().clone();
+        test_product.save(&mut con).expect("DIDNT SAVE");
+        let test_product = open_food_facts::sdk::search_openff("Butter").await.unwrap().products.first().unwrap().clone();
+        test_product.save(&mut con).expect("DIDNT SAVE");
         let products = open_food_facts::models::Product::all(&mut con);
         println!("{:?}", products);
         assert!(products.len()>= 1);

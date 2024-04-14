@@ -1,5 +1,6 @@
 pub mod models;
 pub mod sdk;
+mod db_connection;
 
 //tests
 #[cfg(test)]

@@ -1,8 +1,17 @@
 extern crate reqwest;
 
-use redis::Connection;
-use serde::{Deserialize, Deserializer, Serialize};
-use crate::db::connector::{default_fetch_all, default_fetch_from_uuid, default_save};
+use redis::{Connection, RedisResult};
+use serde::{Deserialize, Serialize};
+use crate::db::connector::{default_fetch, default_fetch_and_parse};
+use crate::models::models::RedisORM;
+use crate::open_food_facts::models::OpenFFValue::{Flt, Str};
+
+#[derive(Serialize, Deserialize,Clone, Debug)]
+#[serde(untagged)]
+pub enum OpenFFValue{
+    Str(String),
+    Flt(f32),
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Product {
@@ -12,51 +21,45 @@ pub struct Product {
     pub(crate) nutriments: Option<Nutriments>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-enum Weirdness {
-    S(String),
-    F(f32),
+impl Product {
+    pub(crate) fn search_local(con: &mut Connection, query: &str) -> Vec<Product> {
+        let product_name = query.to_lowercase();
+        let keys: Vec<String> = redis::Cmd::keys("product_name:*".to_string() + &product_name +"*").query(con).unwrap();
+        let mut products: Vec<Product> = vec![];
+        for key in keys.iter() {
+            let product_id =  default_fetch(con, key).unwrap();
+            let product = Product::fetch_from_uuid(con, &product_id.unwrap());
+
+            dbg!(product.clone());
+            if product.is_some() {
+                products.push(product.unwrap());
+            }
+        }
+        products
+    }
 }
 
+impl TryInto<f32> for OpenFFValue{
+    type Error = String;
 
-impl crate::models::models::RedisInterface for Product {
-    fn save(&self, con: &mut redis::Connection) -> redis::RedisResult<()> {
-        default_save(con, "product", &self.code, self)
-    }
-
-    fn fetch_from_uuid(con: &mut redis::Connection, id: &str) -> Option<Product> {
-        default_fetch_from_uuid(con, "product", id)
-    }
-
-    fn new() -> Product {
-        Product {
-            code: "".to_string(),
-            nutrition_grades: None,
-            product_name: None,
-            nutriments: None,
+    fn try_into(self) -> Result<f32, Self::Error> {
+        match self {
+            Flt(x) => Ok(x),
+            Str(s) =>  s.parse().map(|num| num).or(Err(format!("OpenFF cant parse value {:?}",s)))
         }
     }
-
-    fn all(con: &mut Connection) -> Vec<Self> where Self: Sized {
-        default_fetch_all(con, "product")
-
-    }
 }
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Nutriments{
 
-    #[serde(deserialize_with = "deserialize_string_or_float")]
-    pub(crate) carbohydrates_100g: Option<f32>,
-    #[serde(deserialize_with = "deserialize_string_or_float")]
-    pub(crate) sugars: Option<f32>,
-    #[serde(deserialize_with = "deserialize_string_or_float")]
-    pub(crate) proteins_100g: Option<f32>,
-    #[serde(deserialize_with = "deserialize_string_or_float")]
-    pub(crate) fat_100g: Option<f32>,
+    pub(crate) carbohydrates_100g: Option<OpenFFValue>,
+    pub(crate) sugars: Option<OpenFFValue>,
+    pub(crate) proteins_100g: Option<OpenFFValue>,
+    pub(crate) fat_100g: Option<OpenFFValue>,
     #[serde(alias = "energy-kcal_100g")]
-    #[serde(deserialize_with = "deserialize_string_or_float")]
-    pub(crate) energy_kcal_100g: Option<f32>,
+    pub(crate) energy_kcal_100g: Option<OpenFFValue>,
 }
 impl Nutriments {
 }
@@ -90,34 +93,18 @@ impl OpenFoodFactsQuery {
     }
 }
 
-
-
-fn deserialize_string_or_float<'de, D>(deserializer: D) -> Result<Option<f32>, D::Error>
-    where
-        D: Deserializer<'de>,
-{
-    // Deserialize the value as a serde_json::Value first
-    let value: serde_json::Value = Deserialize::deserialize(deserializer)?;
-
-    match value {
-        serde_json::Value::Number(n) => {
-            // If the value is a number, deserialize it as a f32
-            if let Some(number) = n.as_f64() {
-                Ok(Some(number as f32))
-            } else {
-                Err(serde::de::Error::custom("Invalid number format"))
-            }
-        }
-        serde_json::Value::String(s) => {
-            // If the value is a string, try parsing it as a float
-            s.parse().map(|num| Some(num)).map_err(serde::de::Error::custom)
-        }
-        _ => Err(serde::de::Error::custom("Invalid value type")),
-    }
-}
-
 #[cfg(test)]
 mod test_models{
+    use super::*;
+    #[test]
+    fn test_openff_value(){
+        let flt: OpenFFValue = Flt(1.0);
+        let str: OpenFFValue = Str("1.0".to_string());
+        let flt_res: f32 = flt.try_into().unwrap();
+        let str_res: f32 = str.try_into().unwrap();
+        assert_eq!(flt_res, 1.0);
+        assert_eq!(str_res, 1.0);
+    }
 
 }
 

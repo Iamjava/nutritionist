@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Title of the document</title>
+</head>
+
+<body>
+<script src="https://unpkg.com/htmx.org@1.9.11"></script>
+<!-- have a button POST a click via AJAX -->
+
+<input class="form-control" type="search"
+       name="query" placeholder="Begin Typing To Search Users..."
+       hx-post="/search"
+       hx-trigger="input changed delay:300ms, search"
+       hx-target="#search-results"
+       hx-indicator=".htmx-indicator">
+
+<table class="table">
+    <span class="htmx-indicator">
+    <!---<img src="/img/bars.svg"/>-->
+    Searching...
+   </span>
+    <tbody id="search-results">
+    </tbody>
+</table>
+
+<button hx-post="/test" hx-swap="outerHTML">
+    Click Me (TEST)
+</button>
+</body>
+
+</html>

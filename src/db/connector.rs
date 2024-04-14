@@ -1,4 +1,5 @@
 use redis::RedisResult;
+use crate::open_food_facts::models::Product;
 
 pub(crate) fn get_connection() -> Result<redis::Connection, redis::RedisError>{
     let client = redis::Client::open("redis://127.0.0.1/")?;
@@ -14,32 +15,35 @@ pub(crate) fn default_save<'a>(con: &mut redis::Connection, key_prefix: &str,key
     result
 }
 
-pub(crate) fn default_fetch< T: for<'a> serde::Deserialize<'a>>( con: & mut redis::Connection,key: impl Into<String> + redis::ToRedisArgs ,) -> Option<T>{
-
+pub(crate) fn default_fetch(con: & mut redis::Connection, key: impl Into<String> + redis::ToRedisArgs,) -> Result<Option<String>, redis::RedisError>{
     let item_str: RedisResult<String> = redis::cmd("GET").arg(key).query(con);
     if item_str.is_err() {
-        return None
+        return Ok(None)
     }
     let res = item_str.unwrap();
-    let item_json = serde_json::from_str(&res);
-    if item_json.is_err() {
-        return None
-    }
-    Some(item_json.unwrap())
+    Ok(Some(res))
 }
-pub(crate) fn default_fetch_from_uuid< T: for<'a> serde::Deserialize<'a>>( con: & mut redis::Connection,key_prefix: &str, id: impl Into<String> ,) -> Option<T>{
+pub(crate) fn default_fetch_and_parse< T: for<'a> serde::Deserialize<'a> + std::fmt::Debug>(con: & mut redis::Connection, key: impl Into<String> + redis::ToRedisArgs,) -> Result<Option<T>, redis::RedisError>{
+
+    let item_str = default_fetch(con, key);
+    dbg!(&item_str);
+    let res = item_str?.ok_or(redis::RedisError::from(std::io::Error::new(std::io::ErrorKind::Other, "Could not fetch from redis")))?;
+    let item_json = serde_json::from_str(&res);
+    Ok(Some(item_json.unwrap()))
+}
+pub(crate) fn default_fetch_from_uuid< T: for<'a> serde::Deserialize<'a> + std::fmt::Debug>( con: & mut redis::Connection,key_prefix: &str, id: impl Into<String> ,) -> Option<T>{
     let key = format!(r"{}:{}", key_prefix,&id.into(), );
-    default_fetch(con, key)
+    default_fetch_and_parse(con, key).expect("Could not fetch from redis")
 }
 
-pub(crate) fn default_fetch_all<T: for<'a> serde::Deserialize<'a>>(con: &mut redis::Connection, key_prefix: &str) -> Vec<T> {
+pub(crate) fn default_fetch_all<T: for<'a> serde::Deserialize<'a> + std::fmt::Debug>(con: &mut redis::Connection, key_prefix: &str) -> Vec<T> {
     let key = format!(r"{}:*", key_prefix);
     // Hier wird noch der default_fetch_all verwendet, der nur die keys holt
     // sollte mal gegen den aktuellen user getauschtwerden, der dann die keys mit SMEMBERS holt
     let keys: Vec<String> = redis::Cmd::keys(key).query(con).unwrap();
     let mut items: Vec<T> = vec![];
     for key in keys {
-        let item = default_fetch(con, key);
+        let item : Option<T> = default_fetch_and_parse(con, key).expect("Could not fetch from redis");
         if item.is_some() {
             items.push(item.unwrap());
         }
