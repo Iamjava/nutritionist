@@ -63,10 +63,6 @@ pub struct Nutriments{
 }
 impl Nutriments {
 }
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SearchResult {
-    pub(crate) products: Vec<Product>,
-}
 
 pub(crate) struct OpenFoodFactsQuery {
     pub(crate) search_query: String,

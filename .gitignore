@@ -1,1 +1,3 @@
 /target
+local-data/appendonly.aof
+local-data/dump.rdb

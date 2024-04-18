@@ -15,8 +15,8 @@ mod tests {
             tags: vec!["de".to_string()],
         };
         match search_openff(query).await {
-            Ok(result) => {
-                for product in result.products {
+            Ok(products) => {
+                for product in products {
                     println!("Product code: {:?}", product.code);
                     println!("Product name: {:?}", product.product_name);
                     println!("Nutrition grade: {:?}", product.nutrition_grades);

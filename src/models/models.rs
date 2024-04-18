@@ -1,7 +1,8 @@
-use redis::{ RedisResult};
+use redis::{Connection, RedisConnectionInfo, RedisResult};
 use crate::open_food_facts;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::db::connector::{default_fetch_all, default_fetch_from_uuid, default_save};
 
 pub trait RedisORM {
     fn save(&self,con:&mut redis::Connection) -> RedisResult<()>;
@@ -17,7 +18,8 @@ pub(crate) struct Meal {
 }
 
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
 pub(crate) struct NutritionistSearchQuery {
     pub(crate) query: String,
 }
+

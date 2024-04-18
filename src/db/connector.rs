@@ -1,8 +1,9 @@
 use redis::RedisResult;
-use crate::open_food_facts::models::Product;
 
 pub(crate) fn get_connection() -> Result<redis::Connection, redis::RedisError>{
-    let client = redis::Client::open("redis://127.0.0.1/")?;
+    let redis_url = std::env::var("REDIS_HOST").unwrap_or("127.0.0.1/".to_string());
+    dbg!(redis_url.clone());
+    let client = redis::Client::open("redis://".to_owned() + &*redis_url)?;
     client.get_connection()
 }
 
@@ -26,14 +27,13 @@ pub(crate) fn default_fetch(con: & mut redis::Connection, key: impl Into<String>
 pub(crate) fn default_fetch_and_parse< T: for<'a> serde::Deserialize<'a> + std::fmt::Debug>(con: & mut redis::Connection, key: impl Into<String> + redis::ToRedisArgs,) -> Result<Option<T>, redis::RedisError>{
 
     let item_str = default_fetch(con, key);
-    dbg!(&item_str);
     let res = item_str?.ok_or(redis::RedisError::from(std::io::Error::new(std::io::ErrorKind::Other, "Could not fetch from redis")))?;
     let item_json = serde_json::from_str(&res);
     Ok(Some(item_json.unwrap()))
 }
 pub(crate) fn default_fetch_from_uuid< T: for<'a> serde::Deserialize<'a> + std::fmt::Debug>( con: & mut redis::Connection,key_prefix: &str, id: impl Into<String> ,) -> Option<T>{
     let key = format!(r"{}:{}", key_prefix,&id.into(), );
-    default_fetch_and_parse(con, key).expect("Could not fetch from redis")
+    default_fetch_and_parse(con, key).unwrap_or(None)
 }
 
 pub(crate) fn default_fetch_all<T: for<'a> serde::Deserialize<'a> + std::fmt::Debug>(con: &mut redis::Connection, key_prefix: &str) -> Vec<T> {

@@ -9,7 +9,7 @@ impl RedisORM for Product{
         default_save(con, "product", &self.code, &self)?;
         let product_name= self.product_name.clone();
         let val = &*product_name.clone().unwrap().to_lowercase();
-        dbg!(val.clone());
+        dbg!(&val);
         if product_name.is_some(){
             let result = redis::cmd("SET").arg("product_name:".to_string()+ val).arg(&self.code).query(con);
             return result
@@ -99,7 +99,7 @@ mod tests {
         let product_name ="Nutella";
 
         let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
-        let mut test_product = open_food_facts::sdk::search_openff(product_name).await.unwrap().products.first().unwrap().clone();
+        let mut test_product = open_food_facts::sdk::search_openff(product_name).await.unwrap().first().unwrap().clone();
         dbg!(test_product.clone());
         test_product.save(&mut con).expect("DIDNT SAVE");
 
@@ -116,7 +116,7 @@ mod tests {
         let product_name ="Nutella";
 
         let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
-        let mut test_products = open_food_facts::sdk::search_openff(product_name).await.unwrap().products;
+        let mut test_products = open_food_facts::sdk::search_openff(product_name).await.unwrap();
         for test_product in test_products.iter(){
             test_product.save(&mut con).expect("DIDNT SAVE");
         }
