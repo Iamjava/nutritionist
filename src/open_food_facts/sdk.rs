@@ -1,6 +1,6 @@
 use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
-use crate::db::connector::{default_fetch_all, default_fetch_from_uuid, default_save};
+use crate::db::connector::{default_fetch_all, default_fetch_from_uuid, default_save, default_save_expire};
 use crate::models::models::{NutritionistSearchQuery, RedisORM};
 use crate::open_food_facts::models::{OpenFoodFactsQuery, Product,};
 
@@ -16,7 +16,7 @@ pub struct SearchResult {
 impl RedisORM for  SearchResult{
     fn save(&self, con: &mut Connection) -> RedisResult<()> {
         println!("Saving search result {:?}", self.query.query);
-        default_save(con, "ffsearch", &self.query.query, self)
+        default_save_expire(con, "ffsearch", &self.query.query, self, 60 * 60 * 24 * 7)
     }
 
     fn fetch_from_uuid(con: &mut Connection, id: &str) -> Option<Self> where Self: Sized {

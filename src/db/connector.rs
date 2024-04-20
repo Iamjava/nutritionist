@@ -1,12 +1,21 @@
+use std::fmt::format;
 use redis::RedisResult;
 
 pub(crate) fn get_connection() -> Result<redis::Connection, redis::RedisError>{
     let redis_url = std::env::var("REDIS_HOST").unwrap_or("127.0.0.1/".to_string());
-    dbg!(redis_url.clone());
     let client = redis::Client::open("redis://".to_owned() + &*redis_url)?;
     client.get_connection()
 }
 
+pub(crate) fn default_save_expire<'a>(con: &mut redis::Connection, key_prefix: &str,key_id: &str, val: impl serde::Serialize,expiry: i32) ->  redis::RedisResult<()> {
+    let stringified = serde_json::to_string(&val).unwrap();
+    let key = format!(r"{}:{}", key_prefix, key_id);
+    //Add to a user set here
+    //let result = redis::cmd("SADD").arg(key).arg(stringified).query(con);
+    let result = redis::cmd("SET").arg(key.clone()).arg(stringified).query(con);
+    let result_ex:RedisResult<()> = redis::cmd("EXPIRE").arg(key.clone()).arg(expiry).query(con);
+    result
+}
 pub(crate) fn default_save<'a>(con: &mut redis::Connection, key_prefix: &str,key_id: &str, val: impl serde::Serialize) ->  redis::RedisResult<()> {
     let stringified = serde_json::to_string(&val).unwrap();
     let key = format!(r"{}:{}", key_prefix, key_id);
