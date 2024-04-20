@@ -15,5 +15,6 @@ services:
       - "10001:10001"
     environment:
       REDIS_HOST: keydb
+      NUT_PORT: 10001
     volumes:
       - ./local-data:/app/local-data:z
