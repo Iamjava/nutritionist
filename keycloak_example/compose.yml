@@ -4,7 +4,7 @@ services:
   # THIS SETUP IS ONLY FOR TESTING PRUPOSES, PLEASE DO NOT USE IT IN PRODUCTION
   keycloak:
     image: quay.io/keycloak/keycloak:19.0.2
-    command: start --hostname=auth.corgijan.dev
+    command: start --hostname=auth.corgijan.dev --proxy edge --hostname-strict-https=false  --optimized
     ports:
       - "9000:8080"
     environment:
@@ -13,3 +13,4 @@ services:
     user: "${UID}:${GID}"
     volumes:
       - ./keycloak_data:/opt/keycloak/data/h2/:z
+  ~
