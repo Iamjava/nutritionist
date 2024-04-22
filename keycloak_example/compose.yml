@@ -4,7 +4,7 @@ services:
   # THIS SETUP IS ONLY FOR TESTING PRUPOSES, PLEASE DO NOT USE IT IN PRODUCTION
   keycloak:
     image: quay.io/keycloak/keycloak:19.0.2
-    command: start --hostname=http://auth.corgijan.dev
+    command: start --hostname=http://auth.corgijan.dev --http-enabled=true
     ports:
       - "9000:8080"
     environment:
