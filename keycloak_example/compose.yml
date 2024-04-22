@@ -13,4 +13,3 @@ services:
     user: "${UID}:${GID}"
     volumes:
       - ./keycloak_data:/opt/keycloak/data/h2/:z
-  ~
