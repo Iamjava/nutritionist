@@ -1,8 +1,6 @@
 extern crate reqwest;
 
-use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
-use crate::db::connector::{default_fetch, default_fetch_and_parse};
 use crate::models::models::RedisORM;
 use crate::open_food_facts::models::OpenFFValue::{Flt, Str};
 
@@ -11,32 +9,7 @@ use crate::open_food_facts::models::OpenFFValue::{Flt, Str};
 pub enum OpenFFValue{
     Str(String),
     Flt(f32),
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Product {
-    pub(crate) code: String,
-    pub(crate) nutrition_grades: Option<String>,
-    pub(crate) product_name: Option<String>,
-    pub(crate) nutriments: Option<Nutriments>,
-}
-
-impl Product {
-    pub(crate) fn search_local(con: &mut Connection, query: &str) -> Vec<Product> {
-        let product_name = query.to_lowercase();
-        let keys: Vec<String> = redis::Cmd::keys("product_name:*".to_string() + &product_name +"*").query(con).unwrap();
-        let mut products: Vec<Product> = vec![];
-        for key in keys.iter() {
-            let product_id =  default_fetch(con, key).unwrap();
-            let product = Product::fetch_from_uuid(con, &product_id.unwrap());
-
-            dbg!(product.clone());
-            if product.is_some() {
-                products.push(product.unwrap());
-            }
-        }
-        products
-    }
+    None,
 }
 
 impl TryInto<f32> for OpenFFValue{
@@ -45,13 +18,15 @@ impl TryInto<f32> for OpenFFValue{
     fn try_into(self) -> Result<f32, Self::Error> {
         match self {
             Flt(x) => Ok(x),
-            Str(s) =>  s.parse().map(|num| num).or(Err(format!("OpenFF cant parse value {:?}",s)))
+            Str(s) =>  s.parse().map(|num| num).or(Err(format!("OpenFF cant parse value {:?}",s))),
+            _=> Err("OpenFFValue is None".to_string())
         }
     }
 }
 
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+
+#[derive(Debug, Serialize, Deserialize, Clone,Default)]
 pub struct Nutriments{
 
     pub(crate) carbohydrates_100g: Option<OpenFFValue>,
@@ -64,6 +39,7 @@ pub struct Nutriments{
 impl Nutriments {
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub(crate) struct OpenFoodFactsQuery {
     pub(crate) search_query: String,
     pub(crate) tags: Vec<String>,

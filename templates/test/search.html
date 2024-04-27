@@ -10,19 +10,17 @@
 
 <input class="form-control" type="search"
        name="query" placeholder="Begin Typing To Search Users..."
-       hx-post="/search"
+       hx-post="/{{USER_ID}}/search"
        hx-trigger="input changed delay:200ms, search"
        hx-target="#search-results"
        hx-indicator=".htmx-indicator">
 
-<table class="table">
-    <span class="htmx-indicator">
-    <!---<img src="/img/bars.svg"/>-->
-    Searching...
-   </span>
-    <tbody id="search-results">
-    </tbody>
-</table>
+<span class="htmx-indicator">
+<!---<img src="/img/bars.svg"/>-->
+Searching...
+</span>
+<div id="search-results">
+</div>
 
 <!--<button hx-post="/test" hx-swap="outerHTML">
     Click Me (TEST)

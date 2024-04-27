@@ -1,8 +1,9 @@
 use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
-use crate::db::connector::{default_fetch_all, default_fetch_from_uuid, default_save, default_save_expire};
+use crate::db::connector::default_save_expire;
 use crate::models::models::{NutritionistSearchQuery, RedisORM};
-use crate::open_food_facts::models::{OpenFoodFactsQuery, Product,};
+use crate::models::product::Product;
+use crate::open_food_facts::models::OpenFoodFactsQuery;
 
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
@@ -19,11 +20,7 @@ impl RedisORM for  SearchResult{
         default_save_expire(con, "ffsearch", &self.query.query, self, 60 * 60 * 24 * 7)
     }
 
-    fn fetch_from_uuid(con: &mut Connection, id: &str) -> Option<Self> where Self: Sized {
-      default_fetch_from_uuid(con, "ffsearch", id)
-    }
-
-    fn default() -> Self where Self: Sized {
+    fn example() -> Self where Self: Sized {
         SearchResult {
             products: vec![],
             query: NutritionistSearchQuery {
@@ -32,8 +29,13 @@ impl RedisORM for  SearchResult{
         }
     }
 
-    fn all(con: &mut Connection) -> Vec<Self> where Self: Sized {
-        default_fetch_all(con, "ffsearch")
+
+    fn redis_type_name() -> String {
+        "ffsearch".to_string()
+    }
+
+    fn redis_id(&self) -> String {
+        self.query.query.clone()
     }
 }
 pub async fn cached_search(search: impl Into<OpenFoodFactsQuery>) -> Result<Vec<Product>, reqwest::Error> {
@@ -44,7 +46,21 @@ pub async fn cached_search(search: impl Into<OpenFoodFactsQuery>) -> Result<Vec<
     if cache.is_some() {
         return Ok(cache.unwrap().products)
     }
-    return search_openff(search).await
+    let result =  search_openff(search.clone()).await?;
+    // Shit Code, DONT do it like that
+    let bind = result.clone();
+    for product in bind.iter() {
+        dbg!(format!("saving {:?}",product.clone()));
+        product.save(&mut con).expect("Could not save product");
+    }
+    let search_result = SearchResult {
+        products: result.clone(),
+        query: NutritionistSearchQuery {
+            query: search.search_query,
+        }
+    };
+    search_result.save(&mut con).expect("Could not save search result");
+    return Ok(result)
 }
 
 

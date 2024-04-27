@@ -1,5 +1,5 @@
 use std::fmt::format;
-use redis::RedisResult;
+use redis::{Connection, RedisResult};
 
 pub(crate) fn get_connection() -> Result<redis::Connection, redis::RedisError>{
     let redis_url = std::env::var("REDIS_HOST").unwrap_or("127.0.0.1/".to_string());
@@ -16,7 +16,7 @@ pub(crate) fn default_save_expire<'a>(con: &mut redis::Connection, key_prefix: &
     let result_ex:RedisResult<()> = redis::cmd("EXPIRE").arg(key.clone()).arg(expiry).query(con);
     result
 }
-pub(crate) fn default_save<'a>(con: &mut redis::Connection, key_prefix: &str,key_id: &str, val: impl serde::Serialize) ->  redis::RedisResult<()> {
+pub(crate) fn default_save<'a>(con: &mut redis::Connection, key_prefix: &str, key_id: &str, val: impl serde::Serialize) ->  redis::RedisResult<()> {
     let stringified = serde_json::to_string(&val).unwrap();
     let key = format!(r"{}:{}", key_prefix, key_id);
     //Add to a user set here
@@ -34,7 +34,6 @@ pub(crate) fn default_fetch(con: & mut redis::Connection, key: impl Into<String>
     Ok(Some(res))
 }
 pub(crate) fn default_fetch_and_parse< T: for<'a> serde::Deserialize<'a> + std::fmt::Debug>(con: & mut redis::Connection, key: impl Into<String> + redis::ToRedisArgs,) -> Result<Option<T>, redis::RedisError>{
-
     let item_str = default_fetch(con, key);
     let res = item_str?.ok_or(redis::RedisError::from(std::io::Error::new(std::io::ErrorKind::Other, "Could not fetch from redis")))?;
     let item_json = serde_json::from_str(&res);
@@ -60,3 +59,21 @@ pub(crate) fn default_fetch_all<T: for<'a> serde::Deserialize<'a> + std::fmt::De
     items
 }
 
+pub(crate) fn default_fetch_all_keys(con: &mut redis::Connection, key_prefix: &str) -> Vec<String> {
+    let key = format!(r"{}:*", key_prefix);
+    let keys: Vec<String> = redis::Cmd::keys(key).query(con).unwrap();
+    keys
+}
+
+pub(crate) fn add_to_set(con: &mut redis::Connection, key: String, val: String) -> redis::RedisResult<()> {
+    redis::cmd("SADD").arg(key).arg(val).query(con)
+}
+
+pub(crate) fn get_set(con: &mut redis::Connection, key: String) -> Vec<String> {
+    let keys: Vec<String> = redis::Cmd::smembers(key).query(con).unwrap();
+    keys
+}
+
+pub(crate) fn remove_from_set(p0: &mut Connection, p1: String, p2: String) -> RedisResult<()> {
+    redis::cmd("SREM").arg(p1).arg(p2).query(p0)
+}

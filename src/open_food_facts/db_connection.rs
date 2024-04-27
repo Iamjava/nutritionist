@@ -1,74 +1,18 @@
-use redis::{Connection, RedisResult};
-use uuid::Uuid;
-use crate::db::connector::{default_fetch_and_parse, default_fetch_all, default_fetch_from_uuid, default_save};
-use crate::models::models::{Meal, RedisORM};
-use crate::open_food_facts::models::Product;
-
-impl RedisORM for Product{
-    fn save(&self, con: &mut Connection) -> RedisResult<()> {
-        default_save(con, "product", &self.code, &self)?;
-        let product_name= self.product_name.clone();
-        let val = &*product_name.clone().unwrap().to_lowercase();
-        dbg!(&val);
-        if product_name.is_some(){
-            let result = redis::cmd("SET").arg("product_name:".to_string()+ val).arg(&self.code).query(con);
-            return result
-        }
-        return Ok(())
-    }
-
-    fn fetch_from_uuid(con: &mut Connection, id: &str) -> Option<Self> where Self: Sized {
-        default_fetch_from_uuid(con,"product",id)
-    }
-
-    fn default() -> Self where Self: Sized {
-        Product{
-            code: "".to_string(),
-            nutrition_grades: None,
-            product_name: None,
-            nutriments: None,
-        }
-    }
-
-    fn all(con: &mut Connection) -> Vec<Self> where Self: Sized {
-        default_fetch_all(con,"product")
-    }
-}
-
-impl RedisORM for Meal {
-    fn save(&self,con: & mut redis::Connection) -> redis::RedisResult<()> {
-        default_save(con, "meal", &self.id.to_string(), self)
-    }
-
-    fn fetch_from_uuid(con: & mut redis::Connection, id: &str,) -> Option<Meal>{
-        default_fetch_from_uuid(con, "meal", id)
-    }
-
-    fn default() -> Meal {
-        Meal {
-            contents: vec![],
-            id: Uuid::new_v4(),
-        }
-    }
-
-    fn all(con: &mut Connection) -> Vec<Self> where Self: Sized {
-        default_fetch_all(con, "meal")
-    }
-}
+use crate::models::models::RedisORM;
 
 #[cfg(test)]
 mod tests {
     use redis::RedisResult;
     use crate::models::models::RedisORM;
     use crate::open_food_facts;
-    use crate::open_food_facts::models::Product;
+    use crate::models::product::Product;
 
     #[tokio::test]
     async fn test_cached_lowercase() {
         let product_name ="Test Köllnflocken Blütenzart";
 
         let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
-        let mut test_product = Product::default();
+        let mut test_product = Product::example();
         test_product.code = "123".to_string();
         test_product.product_name = Some(product_name.to_string());
         test_product.save(&mut con).expect("DIDNT SAVE");
@@ -86,7 +30,7 @@ mod tests {
         let product_name ="FLOCKEN Kölln";
 
         let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
-        let mut test_product = Product::default();
+        let mut test_product = Product::example();
         test_product.code = "123".to_string();
         test_product.save(&mut con).expect("DIDNT SAVE");
 

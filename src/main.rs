@@ -10,26 +10,28 @@ async fn main() {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-    use crate::models::models;
+    use crate::models::meal;
     use uuid::Uuid;
     use crate::models::models::RedisORM;
     use crate::db::connector;
-    use crate::open_food_facts;
-    use crate::open_food_facts::models::Product;
+    use crate::{models, open_food_facts};
+    use crate::models::product::Product;
 
 
     #[tokio::test]
     async fn test_serialisation(){
-        let test_meal = models::Meal {
+        let test_meal = meal::Meal {
             contents: vec![],
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e9").unwrap(),
+            user_id: "12345".to_string(),
+            date: chrono::Utc::now(),
         };
         let mut con = connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
         test_meal.save(&mut con).expect("DIDNT SAVE");
 
-        let meal = models::Meal::fetch_from_uuid(&mut con, &Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e9").unwrap().to_string());
+        let meal = meal::Meal::fetch_from_uuid(&mut con, &Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e9").unwrap().to_string());
         assert!(meal.is_some());
-        let meal = models::Meal::fetch_from_uuid(&mut con, &Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e8").unwrap().to_string());
+        let meal = meal::Meal::fetch_from_uuid(&mut con, &Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e8").unwrap().to_string());
         assert!(meal.is_none());
     }
 
@@ -38,31 +40,33 @@ mod tests {
     async fn create_test_data(){
         let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
 
-        let mut test_product = Product::default();
+        let mut test_product = Product::example();
         test_product.code = "123".to_string();
         test_product.product_name = Some("Test Product1".to_string());
         test_product.save(&mut con).unwrap();
 
-        let mut test_product = Product::default();
+        let mut test_product = Product::example();
         test_product.code = "124".to_string();
         test_product.product_name = Some("Test Productw".to_string());
         test_product.save(&mut con).unwrap();
 
-        let mut test_product = Product::default();
+        let mut test_product = Product::example();
         test_product.code = "125".to_string();
         test_product.product_name = Some("Test Product3".to_string());
         test_product.save(&mut con).unwrap();
     }
     #[tokio::test]
     async fn test_all_meals(){
-        let test_meal = models::Meal {
+        let test_meal = meal::Meal {
             contents: vec![],
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e7").unwrap(),
+            user_id: "12345".to_string(),
+            date: chrono::Utc::now(),
         };
         let mut con = connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
         test_meal.save(&mut con).expect("DIDNT SAVE");
 
-        let meals = models::Meal::all(&mut con);
+        let meals = meal::Meal::all(&mut con);
         println!("{:?}", meals);
         assert!(meals.len()>= 1);
     }
@@ -85,7 +89,7 @@ mod tests {
         test_product.save(&mut con).expect("DIDNT SAVE");
         let test_product = open_food_facts::sdk::search_openff("Butter").await.unwrap().first().unwrap().clone();
         test_product.save(&mut con).expect("DIDNT SAVE");
-        let products = open_food_facts::models::Product::all(&mut con);
+        let products = models::product::Product::all(&mut con);
         println!("{:?}", products);
         assert!(products.len()>= 1);
     }
