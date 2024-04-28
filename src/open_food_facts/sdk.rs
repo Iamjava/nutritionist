@@ -50,7 +50,6 @@ pub async fn cached_search(search: impl Into<OpenFoodFactsQuery>) -> Result<Vec<
     // Shit Code, DONT do it like that
     let bind = result.clone();
     for product in bind.iter() {
-        dbg!(format!("saving {:?}",product.clone()));
         product.save(&mut con).expect("Could not save product");
     }
     let search_result = SearchResult {
@@ -77,7 +76,7 @@ pub async fn search_openff(search: impl Into<OpenFoodFactsQuery>) -> Result<Vec<
         ("fields", "code,nutrition_grades,categories_tags_en,product_name,nutriments"),
     ];
     let client = reqwest::Client::new();
-    let response = client.get(url).query(&params).send().await?;
+    let response = dbg!(client.get(url).query(&params)).send().await?;
     let mut search_result: SearchResult = response.json().await?;
     search_result.query = NutritionistSearchQuery {
         query: search.search_query,

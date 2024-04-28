@@ -3,6 +3,7 @@ use axum::http::{Response, StatusCode};
 use std::fs;
 use axum::extract::Path;
 use axum::Form;
+use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
 use tera::Context;
 use crate::app::forms::ProductForm;
 use crate::app::server::TEMPLATES;
@@ -19,7 +20,7 @@ pub async fn handle_meals() -> Response<String>{
     dbg!(meals.clone());
     let mut meals_string="".to_string();
     for meal in meals.iter(){
-        meals_string.push_str(&format!("<a href='/meal/{}'>Meal {}</a><br>",meal.id,meal.id));
+        meals_string.push_str(&format!("<a href='/meals/{}'>Meal {}</a><br>",meal.id,meal.id));
     }
 
     Response::builder()
@@ -56,7 +57,7 @@ pub async fn handle_search_test() -> Response<String> {
 }
 
 // add a content to a meal /meal/:id/addcontent
-pub async fn handle_add_content_to_meal(Path((id)): Path<(String)>,x: Form<ProductForm>) -> Response<String> {
+pub async fn handle_add_content_to_meal(Path((id)): Path<String>,x: Form<ProductForm>) -> Response<String> {
     let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
 
     let mut meal = Meal::fetch_from_uuid(&mut con, &id).expect("DIDNT FIND MEAL");
@@ -70,7 +71,7 @@ pub async fn handle_add_content_to_meal(Path((id)): Path<(String)>,x: Form<Produ
 
     Response::builder()
         .status(StatusCode::SEE_OTHER)
-        .header("Location", format!("/meal/{}", id))
+        .header("Location", format!("/meals/{}", id))
         .body("".into())
         .unwrap()
 }
@@ -84,7 +85,7 @@ pub async fn handle_create_meal() -> Response<String> {
     // send a redirect to the newly created meal
     Response::builder()
         .status(StatusCode::SEE_OTHER)
-        .header("Location", format!("/meal/{}", meal.id))
+        .header("Location", format!("/meals/{}", meal.id))
         .body("".into())
         .unwrap()
 }
@@ -96,13 +97,11 @@ pub async fn handle_meal(Path(id): Path<String>) -> Response<String> {
     user.id = "TEST_ID".to_string();
     let meal = Meal::fetch_from_uuid(&mut con, &id).expect("DIDNT FIND MEAL");
     // Using the tera Context struct
-    let macros = meal.get_macros().unwrap();
+    let macros = meal.get_macros();
     let mut context = Context::new();
     context.insert("meal", &meal);
     context.insert("macros", &macros);
     context.insert("edit", &true);
-
-
     let t = TEMPLATES.render("meals/meal_view.html", &context).unwrap();
 
     Response::builder()
@@ -113,15 +112,19 @@ pub async fn handle_meal(Path(id): Path<String>) -> Response<String> {
 }
 
 pub async fn handle_search_meal_add(Path(id): Path<String>) -> Response<String> {
-    let string_from_template = fs::read_to_string("templates/test/search.html").unwrap().replace("{{USER_ID}}", &*id);
 
+    let mut context = Context::new();
+    context.insert("meal_id", &id);
+    let t = TEMPLATES.render("test/search.html", &context).unwrap();
     Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "text/html; charset=utf-8")
-        .body(string_from_template.into())
+        .body(t.into())
         .unwrap()
 }
-pub async fn handle_search() -> Response<String> {
+pub async fn handle_search(
+    claims: Option<OidcClaims<EmptyAdditionalClaims>>,
+) -> Response<String> {
     let string_from_template = fs::read_to_string("templates/test/search.html").unwrap();
 
     Response::builder()
@@ -155,11 +158,35 @@ pub async fn handle_search_post_meal_add( Path(id): Path<String>, x: axum::Form<
 pub async fn remove_product_from_meal_handler(Path((meal_id,product_id)): Path<(String,String)>) -> Response<String> {
     let mut con = db::connector::get_connection().unwrap();
     let mut meal = Meal::fetch_from_uuid(&mut con, &meal_id).unwrap();
+    dbg!(meal.contents.len());
     meal.contents.retain(|x| x.product.code != product_id);
+    dbg!(meal.contents.len());
+
+    let macros = meal.get_macros();
+    let mut context = Context::new();
+    context.insert("meal", &meal);
+    context.insert("macros", &macros);
+    context.insert("edit", &true);
+
+
+    let t = TEMPLATES.render("meals/meal_view.html", &context).unwrap();
     meal.save(&mut con).unwrap();
     Response::builder()
-        .status(StatusCode::SEE_OTHER)
-        .header("Location", format!("/meal/{}", meal_id))
-        .body("".into())
+        .status(StatusCode::OK)
+        .body(t.into())
+        .unwrap()
+}
+
+pub(crate) async fn show_product_handler(code: Path<String>) ->Response<String> {
+    let mut con = db::connector::get_connection().unwrap();
+    let product = Product::fetch_from_uuid(&mut con, &code).unwrap();
+    let macros = product.get_numerical_macros();
+    let mut context = Context::new();
+    context.insert("product", &product);
+    context.insert("macros", &macros);
+    let t = TEMPLATES.render("product/product_view.html", &context).unwrap();
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(t.into())
         .unwrap()
 }

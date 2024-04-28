@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Error};
-use std::ops::Mul;
+use std::ops::{Add, Mul};
 use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -17,22 +17,42 @@ pub(crate) struct Meal {
     pub(crate) date: chrono::DateTime<chrono::Utc>,
 }
 
+
+impl Add for OpenFFValue {
+    type Output = OpenFFValue;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        OpenFFValue::Flt(self.to_numerical() + rhs.to_numerical())
+    }
+}
+
+impl Add for Nutriments {
+    type Output = Nutriments;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Nutriments {
+            carbohydrates_100g: Some(self.carbohydrates_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.carbohydrates_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+            sugars_100g: Some(self.sugars_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.sugars_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+            proteins_100g: Some(self.proteins_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.proteins_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+            fat_100g: Some(self.fat_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.fat_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+            energy_kcal_100g: Some(self.energy_kcal_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.energy_kcal_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+            fiber_100g: Some(self.fiber_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.fiber_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+            salt_100g: Some(self.salt_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.salt_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+            sodium_100g: Some(self.sodium_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.sodium_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+        }
+
+    }
+}
+
 impl Meal {
-    pub(crate) fn get_macros(&self) -> Result<(f32, f32, f32, f32),Error> {
-        let mut protein = 0.0;
-        let mut fat = 0.0;
-        let mut carbs = 0.0;
-        let mut kcal = 0.0;
+    pub(crate) fn get_macros(&self) -> Nutriments {
+        let mut nutriments = Nutriments::default();
         let prods = self.contents.clone();
         for product in prods.into_iter() {
-                let ( pr, fa, ca) = product.product.get_macros();
-                protein += pr.try_into().unwrap_or(0.0)*product.quantity;
-                fat += fa.try_into().unwrap_or(0.0)*product.quantity;
-                carbs += ca.try_into().unwrap_or(0.0)*product.quantity;
-                let mut kcal: f32 = product.product.nutriments.unwrap_or(Nutriments::default()).energy_kcal_100g.unwrap_or(OpenFFValue::Flt(0f32)).try_into().unwrap_or(0f32);
-                kcal += kcal*product.quantity;
+                let mut i = product.product.get_numerical_macros();
+                nutriments = nutriments + i;
         }
-        Ok((protein, fat, carbs, kcal))
+        nutriments
     }
 
     pub(crate) fn get_kcal(&self) -> Result<f32,Error> {

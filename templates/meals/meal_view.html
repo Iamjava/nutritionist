@@ -1,22 +1,25 @@
-<html>
+<html id="prodlist">
 <head>
     <title>Meal View</title>
 </head>
     <body>
     <script src="https://unpkg.com/htmx.org@1.9.11"></script>
         <h1> Meal {{meal.id}}</h1>
-        <ul>
+        <ul >
             {% for content in meal.contents %}
-                <li>{{content.product.product_name}} - {{content.quantity| round(method="common", precision=2) }} {% if edit %} <button  hx-delete="/meals/{{meal.id}}/{{content.product.code}}">Delete</button> {% endif %}</li>
+                <li>{{content.product.product_name}} - {{content.quantity| round(method="common", precision=2) }} {% if edit %} <button hx-target="#prodlist"  hx-delete="/meals/{{meal.id}}/{{content.product.code}}">Delete</button> {% endif %}</li>
             {% endfor %}
             <li>
                 <a href="/meals/{{meal.id}}/search">Add Content</a>
             </li>
         </ul>
-        Protein: {{macros.0 | round }}<br>
-        Carbs: {{macros.1 | round}}<br>
-        Fat: {{macros.2 |round }}<br>
-        Calories: {{macros.3 |round}}<br>
+        Sugars: {{macros.sugars_100g |round}}g<br>
+        Fats: {{macros.fat_100g |round}}g<br>
+        Carbs: {{macros.carbohydrates_100g |round}}g<br>
+        Proteins: {{macros.proteins_100g |round}}g<br>
+        Fiber: {{macros.fiber_100g |round}}g<br>
+        Salt: {{macros.salt_100g |round}}g<br>
+
         <br>
     </body>
 </html>

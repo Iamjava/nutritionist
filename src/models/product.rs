@@ -40,19 +40,34 @@ impl Product {
         }
         products
     }
-    pub(crate) fn get_macros(&self) -> (OpenFFValue, OpenFFValue, OpenFFValue) {
+    pub(crate) fn get_numerical_macros(&self) -> Nutriments {
         let nutriments = self.nutriments.clone().unwrap();
         let protein = nutriments.proteins_100g.unwrap_or(OpenFFValue::None);
         let fat = nutriments.fat_100g.unwrap_or(OpenFFValue::None);
         let carbs = nutriments.carbohydrates_100g.unwrap_or(OpenFFValue::None);
-        (protein, fat, carbs)
+        let kcal = nutriments.energy_kcal_100g.unwrap_or(OpenFFValue::None);
+        let fiber = nutriments.fiber_100g.unwrap_or(OpenFFValue::None);
+        let salt = nutriments.salt_100g.unwrap_or(OpenFFValue::None);
+        let sodium = nutriments.sodium_100g.unwrap_or(OpenFFValue::None);
+        let sugar = nutriments.sugars_100g.unwrap_or(OpenFFValue::None);
+
+        Nutriments{
+            carbohydrates_100g: Some(carbs),
+            sugars_100g: Some(sugar),
+            proteins_100g: Some(protein),
+            fat_100g: Some(fat),
+            energy_kcal_100g: Some(kcal),
+            fiber_100g: Some(fiber),
+            salt_100g: Some(salt),
+            sodium_100g: Some(sodium),
+        }
     }
 }
 impl Debug for Product {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Product")
             .field("product_name", &self.product_name)
-            .field("macros", &self.get_macros())
+            .field("macros", &self.get_numerical_macros())
             .finish()
     }
 }

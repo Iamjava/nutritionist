@@ -12,6 +12,17 @@ pub enum OpenFFValue{
     None,
 }
 
+impl OpenFFValue{
+    pub fn to_numerical(&self) -> f32 {
+        match self {
+            Flt(x) => *x,
+            Str(s) => s.parse().unwrap_or(0.0),
+            _=> 0.0
+        }
+    }
+}
+
+
 impl TryInto<f32> for OpenFFValue{
     type Error = String;
 
@@ -26,17 +37,31 @@ impl TryInto<f32> for OpenFFValue{
 
 
 
-#[derive(Debug, Serialize, Deserialize, Clone,Default)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Nutriments{
-
     pub(crate) carbohydrates_100g: Option<OpenFFValue>,
-    pub(crate) sugars: Option<OpenFFValue>,
+    pub(crate) sugars_100g: Option<OpenFFValue>,
     pub(crate) proteins_100g: Option<OpenFFValue>,
     pub(crate) fat_100g: Option<OpenFFValue>,
     #[serde(alias = "energy-kcal_100g")]
     pub(crate) energy_kcal_100g: Option<OpenFFValue>,
+    pub(crate) fiber_100g: Option<OpenFFValue>,
+    pub(crate) salt_100g: Option<OpenFFValue>,
+    pub(crate) sodium_100g: Option<OpenFFValue>,
 }
-impl Nutriments {
+impl Default for Nutriments {
+    fn default() -> Self {
+        Nutriments {
+            carbohydrates_100g: Some(OpenFFValue::Flt(0.0)),
+            sugars_100g: Some(OpenFFValue::Flt(0.0)),
+            proteins_100g: Some(OpenFFValue::Flt(0.0)),
+            fat_100g: Some(OpenFFValue::Flt(0.0)),
+            energy_kcal_100g: Some(OpenFFValue::Flt(0.0)),
+            fiber_100g: Some(OpenFFValue::Flt(0.0)),
+            salt_100g: Some(OpenFFValue::Flt(0.0)),
+            sodium_100g: Some(OpenFFValue::Flt(0.0)),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
