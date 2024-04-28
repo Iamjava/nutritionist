@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use crate::db::connector::{default_fetch, default_fetch_all, default_save};
 use crate::models::meal::MealContent;
 use crate::models::models::RedisORM;
@@ -19,6 +20,7 @@ impl Into<MealContent> for Product{
         MealContent {
             product: self,
             quantity: 1.0,
+            id: Uuid::new_v4(),
         }
     }
 

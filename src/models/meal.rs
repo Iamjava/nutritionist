@@ -134,4 +134,5 @@ mod tests {
 pub struct MealContent {
     pub(crate) product: Product,
     pub(crate) quantity: f32,
+    pub(crate) id: Uuid,
 }

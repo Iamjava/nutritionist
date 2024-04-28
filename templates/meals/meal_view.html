@@ -1,25 +1,32 @@
-<html id="prodlist">
-<head>
-    <title>Meal View</title>
-</head>
-    <body>
-    <script src="https://unpkg.com/htmx.org@1.9.11"></script>
-        <h1> Meal {{meal.id}}</h1>
-        <ul >
-            {% for content in meal.contents %}
-                <li>{{content.product.product_name}} - {{content.quantity| round(method="common", precision=2) }} {% if edit %} <button hx-target="#prodlist"  hx-delete="/meals/{{meal.id}}/{{content.product.code}}">Delete</button> {% endif %}</li>
-            {% endfor %}
-            <li>
-                <a href="/meals/{{meal.id}}/search">Add Content</a>
-            </li>
-        </ul>
-        Sugars: {{macros.sugars_100g |round}}g<br>
-        Fats: {{macros.fat_100g |round}}g<br>
-        Carbs: {{macros.carbohydrates_100g |round}}g<br>
-        Proteins: {{macros.proteins_100g |round}}g<br>
-        Fiber: {{macros.fiber_100g |round}}g<br>
-        Salt: {{macros.salt_100g |round}}g<br>
+{% extends "base.html" %}
+{% block title %}Meals{% endblock title %}
+{% block head %}
+{{ super() }}
+<style type="text/css">
+    .important { color: #336699; }
+</style>
+{% endblock head %}
+{% block content %}
+<h1> Meal {{meal.id}}</h1>
+<ul >
+    {% for content in meal.contents %}
+    <li>
+        {{content.product.product_name}} - {{content.quantity| round(method="common", precision=2) }}g {% if edit %}
+            <button hx-target="#body"  hx-delete="/meals/{{meal.id}}/{{content.id}}" class="btn btn-danger">🗑️</button>
+        {% endif %}
+    </li>
+    {% endfor %}
+    <li>
+        <a href="/meals/{{meal.id}}/search">Add Content</a>
+    </li>
+</ul>
+Fats: {{macros.fat_100g |round}}g<br>
+Carbs: {{macros.carbohydrates_100g |round}}g<br>
+Proteins: {{macros.proteins_100g |round}}g<br>
+<br>
+Fiber: {{macros.fiber_100g |round}}g<br>
+Sugars: {{macros.sugars_100g |round}}g<br>
+Salt: {{macros.salt_100g |round}}g<br>
 
-        <br>
-    </body>
-</html>
+<br>
+{% endblock content %}

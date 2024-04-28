@@ -5,6 +5,7 @@ use axum::extract::Path;
 use axum::Form;
 use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
 use tera::Context;
+use uuid::Uuid;
 use crate::app::forms::ProductForm;
 use crate::app::server::TEMPLATES;
 use crate::db;
@@ -66,6 +67,7 @@ pub async fn handle_add_content_to_meal(Path((id)): Path<String>,x: Form<Product
     let prod = crate::models::meal::MealContent{
         product: prod,
         quantity: x.amount,
+        id: Uuid::new_v4(),
     };
     meal.contents.append(&mut vec![prod]);
     meal.save(&mut con).expect("DIDNT SAVE");
@@ -156,11 +158,11 @@ pub async fn handle_search_post_meal_add( Path(id): Path<String>, x: axum::Form<
         .unwrap()
 }
 
-pub async fn remove_product_from_meal_handler(Path((meal_id,product_id)): Path<(String,String)>) -> Response<String> {
+pub async fn remove_product_from_meal_handler(Path((meal_id,id)): Path<(String,String)>) -> Response<String> {
     let mut con = db::connector::get_connection().unwrap();
     let mut meal = Meal::fetch_from_uuid(&mut con, &meal_id).unwrap();
     dbg!(meal.contents.len());
-    meal.contents.retain(|x| x.product.code != product_id);
+    meal.contents.retain(|x| x.id != id.to_string().parse().unwrap());
     dbg!(meal.contents.len());
 
     let macros = meal.get_macros();
