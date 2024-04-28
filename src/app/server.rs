@@ -20,6 +20,7 @@ use tower_sessions::{
     cookie::{time::Duration, SameSite},
     Expiry, MemoryStore, SessionManagerLayer,
 };
+use crate::app::handler::handle_meals;
 
 // static once cell for Templates with tera
 pub static TEMPLATES: once_cell::sync::Lazy<Tera> = once_cell::sync::Lazy::new(|| {
@@ -72,7 +73,7 @@ pub async fn serve() {
         .route("/search", get(handler::handle_search))
         .route("/test", post(|| async { handler::handle_search_test().await }))
         .route("/newmeal", get(|| async { handler::handle_create_meal().await }))
-        .route("/meals", get(|| async { handler::handle_meals().await }))
+        .route("/meals", get(handle_meals))
         .route("/meals/:id/search", get(|id: Path<String>| async { handler::handle_search_meal_add(id).await }))
         .route("/meals/:id", get(|id: Path<String>| async { handler::handle_meal(id).await }))
         .route("/meals/:id", post(|id: Path<String>,x: axum::Form<ProductForm> | async { handler::handle_add_content_to_meal(id, x).await }))
@@ -108,5 +109,5 @@ async fn maybe_authenticated(
 }
 
 async fn logout(logout: OidcRpInitiatedLogout) -> impl IntoResponse {
-    logout.with_post_logout_redirect(Uri::from_static("https://pfzetto.de"))
+    logout.with_post_logout_redirect(Uri::from_static("https://google.de"))
 }

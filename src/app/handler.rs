@@ -14,19 +14,20 @@ use crate::models::models::{NutritionistSearchQuery, RedisORM};
 use crate::models::product::Product;
 use crate::open_food_facts::sdk::cached_search;
 
-pub async fn handle_meals() -> Response<String>{
+pub async fn handle_meals(
+    claims: Option<OidcClaims<EmptyAdditionalClaims>>,
+) -> Response<String>{
     let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
     let meals = Meal::all(&mut con);
-    dbg!(meals.clone());
-    let mut meals_string="".to_string();
-    for meal in meals.iter(){
-        meals_string.push_str(&format!("<a href='/meals/{}'>Meal {}</a><br>",meal.id,meal.id));
-    }
+    let mut context = Context::new();
+    context.insert("meals", &meals);
+    context.insert("username", &claims.unwrap().preferred_username());
+    let t = TEMPLATES.render("meals/meals_view.html", &context).unwrap();
 
     Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "text/html; charset=utf-8")
-        .body(meals_string.into())
+        .body(t.into())
         .unwrap()
 }
 

@@ -1,0 +1,14 @@
+<html id="prodlist">
+<head>
+    <title>Meal View</title>
+</head>
+    <body>
+    <script src="https://unpkg.com/htmx.org@1.9.11"></script>
+        <h1> Meals of {{username}}</h1>
+
+    {% for meal in meals %}
+        <a href='/meals/{{meal.id}}'>Meal {{meal.id}}</a><br>
+    {% endfor %}
+
+    </body>
+</html>
