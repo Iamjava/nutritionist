@@ -10,7 +10,8 @@ services:
         - ./redis.conf:/etc/keydb/keydb.conf:z
 
   nutritionist:
-    image: hainz98/nutritionist:latest
+    #image: hainz98/nutritionist:latest
+    build: .
     ports:
       - "10001:10001"
     environment:
