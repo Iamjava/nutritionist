@@ -19,6 +19,7 @@ services:
       ISSUER: https://auth.corgijan.dev/realms/nutritionist
       CLIENT_ID: nutritionist
       CLIENT_SECRET: yU2ToLMojyahlVon1WmxDpBda1foyFua
-      APP_URL:  nutritionist.corgijan.dev
+      APP_URL:  https://nutritionist.corgijan.dev
+      NUT_PORT: 10001
     volumes:
       - ./local-data:/app/local-data:z
