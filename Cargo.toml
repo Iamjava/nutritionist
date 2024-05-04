@@ -13,11 +13,11 @@ redis = "0.25.2"
 serde_json = "1.0.115"
 uuid = { version = "1.8.0", features = ["v4","serde"] }
 axum = "0.7.5"
-tera = "1.19.1"
 once_cell = "1.19.0"
 chrono = { version = "0.4", features = ["serde"] }
-axum-oidc = { path ="/home/jan/projects/rust-oidc/axum-oidc"}
+axum-oidc = { path ="axum-oidc"}
 dotenvy = "0.15.7"
 tower = "0.4.13"
 
 tower-sessions = "0.11.0"
+askama = "0.12.1"

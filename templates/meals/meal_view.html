@@ -1,32 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Meals{% endblock title %}
 {% block head %}
-{{ super() }}
 <style type="text/css">
     .important { color: #336699; }
 </style>
 {% endblock head %}
 {% block content %}
-<h1> Meal {{meal.id}}</h1>
-<ul >
-    {% for content in meal.contents %}
-    <li>
-        {{content.product.product_name}} - {{content.quantity| round(method="common", precision=2) }}g {% if edit %}
-            <button hx-target="#body"  hx-delete="/meals/{{meal.id}}/{{content.id}}" class="btn btn-danger">🗑️</button>
-        {% endif %}
-    </li>
-    {% endfor %}
-    <li>
-        <a href="/meals/{{meal.id}}/search">Add Content</a>
-    </li>
-</ul>
-Fats: {{macros.fat_100g |round}}g<br>
-Carbs: {{macros.carbohydrates_100g |round}}g<br>
-Proteins: {{macros.proteins_100g |round}}g<br>
-<br>
-Fiber: {{macros.fiber_100g |round}}g<br>
-Sugars: {{macros.sugars_100g |round}}g<br>
-Salt: {{macros.salt_100g |round}}g<br>
 
-<br>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="text-center">Meal {{ meal.id }}</h1>
+            <table class="table table-bordered text-center mt-3">
+                <tbody>
+                {% for content in meal.contents %}
+                <tr>
+                    <td>{{ content.product.description }}</td>
+                    <td>{{ content.quantity }}g</td>
+                    {% if edit %}
+                    <td>
+                        {{ content.product.nutrient_values.energy }} kcal
+                    </td>
+                    <td>
+                        <button hx-target="#body" hx-delete="/meals/{{ meal.id }}/{{ content.id }}" class="btn btn-sm btn-danger">🗑️</button>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="{% if edit %}4{% else %}2{% endif %}">
+                        <a href="/meals/{{ meal.id }}/search">Add Content</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="mt-4">
+                <strong>Energy:</strong> {{ macros.energy }} Kcal<br>
+                <hr>
+                <strong>Fats:</strong> {{ macros.fats }} g<br>
+                <strong>Carbs:</strong> {{ macros.carbohydrates }} g<br>
+                <strong>Proteins:</strong> {{ macros.proteins }} g<br>
+                <br>
+                <strong>Fiber:</strong> {{ macros.fiber }} g<br>
+                <strong>Sugars:</strong> {{ macros.sugar }} g<br>
+                <strong>Salt:</strong> {{ macros.salt }} g<br>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock content %}

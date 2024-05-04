@@ -1,30 +1,36 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Title of the document</title>
-</head>
-
-<body>
+{% extends "base.html" %}
+{% block content %}
 <script src="https://unpkg.com/htmx.org@1.9.11"></script>
 <!-- have a button POST a click via AJAX -->
 
-<input class="form-control" type="search"
-       name="query" placeholder="Begin Typing To Search Users..."
-       hx-post="/{{meal_id}}/search"
-       hx-trigger="input changed delay:600ms, search"
-       hx-target="#search-results"
-       hx-indicator=".htmx-indicator">
 
 <span class="htmx-indicator">
 <!---<img src="/img/bars.svg"/>-->
 Searching...
 </span>
-<div id="search-results">
+<div "container mt-5">
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h1 class="text-center">Search</h1>
+        <table class="table table-bordered text-center mt-3">
+            <tbody>
+
+            <input class="form-control" type="search"
+                   name="query" placeholder="Begin Typing To Search Foods..."
+                   hx-post="/{{meal_id}}/search"
+                   hx-trigger="input changed delay:600ms, search"
+                   hx-target="#search-results"
+                   hx-indicator=".htmx-indicator">
+            </tbody>
+            <td>
+                <div id="search-results">
+                </div>
+            </td>
+        </table>
+        <div class="mt-4">
+            AAA
+        </div>
+    </div>
 </div>
-
-<!--<button hx-post="/test" hx-swap="outerHTML">
-    Click Me (TEST)
-</button>-->
-</body>
-
-</html>
+</div>
+{% endblock content %}

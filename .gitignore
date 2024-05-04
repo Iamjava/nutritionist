@@ -1,3 +1,6 @@
-/target
 local-data/appendonly.aof
 local-data/dump.rdb
+openff-dump
+target
+keycloak_example
+off-scripts

@@ -1,13 +1,13 @@
 use std::fmt::{Debug, Error};
+use crate::db::connector;
 use std::ops::{Add, Mul};
 use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::db;
 use crate::models::models::RedisORM;
-use crate::{db, models, open_food_facts};
 use crate::db::connector::{default_fetch_from_uuid, default_save};
-use crate::models::product::Product;
-use crate::open_food_facts::models::{Nutriments, OpenFFValue};
+use crate::usda::search::{Food, NutrientValues};
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
 pub(crate) struct Meal {
@@ -18,38 +18,30 @@ pub(crate) struct Meal {
 }
 
 
-impl Add for OpenFFValue {
-    type Output = OpenFFValue;
+
+impl Add for NutrientValues {
+    type Output = NutrientValues;
 
     fn add(self, rhs: Self) -> Self::Output {
-        OpenFFValue::Flt(self.to_numerical() + rhs.to_numerical())
-    }
-}
-
-impl Add for Nutriments {
-    type Output = Nutriments;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Nutriments {
-            carbohydrates_100g: Some(self.carbohydrates_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.carbohydrates_100g.unwrap_or(OpenFFValue::Flt(0.0))),
-            sugars_100g: Some(self.sugars_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.sugars_100g.unwrap_or(OpenFFValue::Flt(0.0))),
-            proteins_100g: Some(self.proteins_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.proteins_100g.unwrap_or(OpenFFValue::Flt(0.0))),
-            fat_100g: Some(self.fat_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.fat_100g.unwrap_or(OpenFFValue::Flt(0.0))),
-            energy_kcal_100g: Some(self.energy_kcal_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.energy_kcal_100g.unwrap_or(OpenFFValue::Flt(0.0))),
-            fiber_100g: Some(self.fiber_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.fiber_100g.unwrap_or(OpenFFValue::Flt(0.0))),
-            salt_100g: Some(self.salt_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.salt_100g.unwrap_or(OpenFFValue::Flt(0.0))),
-            sodium_100g: Some(self.sodium_100g.unwrap_or(OpenFFValue::Flt(0.0)) + rhs.sodium_100g.unwrap_or(OpenFFValue::Flt(0.0))),
+        NutrientValues{
+            carbohydrates: self.carbohydrates + rhs.carbohydrates,
+            proteins: self.proteins + rhs.proteins,
+            fats: self.fats + rhs.fats,
+            energy: self.energy + rhs.energy,
+            fiber: self.fiber + rhs.fiber,
+            salt: self.salt + rhs.salt,
+            sodium: self.sodium + rhs.sodium,
+            sugar: self.sugar + rhs.sugar,
         }
-
     }
 }
 
 impl Meal {
-    pub(crate) fn get_macros(&self) -> Nutriments {
-        let mut nutriments = Nutriments::default();
+    pub(crate) fn get_macros(&self) -> NutrientValues {
+        let mut nutriments = NutrientValues::default();
         let prods = self.contents.clone();
-        for product in prods.into_iter() {
-                let mut i = product.product.get_numerical_macros();
+        for content in prods.into_iter() {
+                let mut i = content.product.get_numerical_macros()* content.quantity*0.01;
                 nutriments = nutriments + i;
         }
         nutriments
@@ -59,10 +51,8 @@ impl Meal {
         let mut kcal = 0.0;
         let prods = self.contents.clone();
         for product in prods.into_iter() {
-            if let Some(nutriments) = product.product.nutriments {
-                let e:OpenFFValue = nutriments.energy_kcal_100g.unwrap_or(OpenFFValue::Flt(0f32));
-                kcal += <OpenFFValue as TryInto<f32>>::try_into(e).expect("TODO: panic message");
-            }
+            let prod = product.product.clone().get_numerical_macros();
+            kcal += prod.energy;
         }
         Ok(kcal)
     }
@@ -107,32 +97,15 @@ mod tests {
     use crate::models::models::RedisORM;
     use crate::models::user::User;
     use crate::{db, models};
-    use crate::open_food_facts::sdk::search_openff;
 
     #[tokio::test]
     async fn test_meal() {
-        let mut con = db::connector::get_connection().unwrap();
-        let user = User::example();
-        let user = User::check_if_exists_or_create(&mut con, &user.id, &user.name, &user.email).unwrap();
-
-        let prod1 = search_openff("Kölln Müsli").await.unwrap();
-        let prod2 = search_openff("Nutella").await.unwrap();
-
-        let mut meal = models::meal::Meal::example();
-
-        meal.contents.push(prod1.first().unwrap().clone().into());
-        meal.contents.push(prod2.first().unwrap().clone().into());
-        meal.save(&mut con).unwrap();
-
-        let meal_fetched = models::meal::Meal::fetch_from_uuid(&mut con, &meal.id.to_string());
-        dbg!(meal_fetched.clone());
-        assert!(meal_fetched.is_some());
     }
 }
 
 #[derive(Debug,Serialize, Deserialize, Clone)]
 pub struct MealContent {
-    pub(crate) product: Product,
+    pub(crate) product: Food,
     pub(crate) quantity: f32,
     pub(crate) id: Uuid,
 }

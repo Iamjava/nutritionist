@@ -7,6 +7,9 @@ WORKDIR /usr/src/myapp
 # Copy the dependency manifests
 COPY Cargo.toml Cargo.lock ./
 
+COPY axum-oidc axum-oidc
+RUN ls axum-oidc
+
 # Build the dependencies separately to optimize caching
 RUN mkdir src && echo "fn main() {}" > src/main.rs && \
     cargo build --release && \

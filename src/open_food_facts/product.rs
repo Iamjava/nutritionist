@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::db::connector::{default_fetch, default_fetch_all, default_save};
 use crate::models::meal::MealContent;
 use crate::models::models::RedisORM;
-use crate::open_food_facts::models::{Nutriments, OpenFFValue};
 
 #[derive( Serialize, Deserialize, Clone)]
 pub struct Product {
@@ -15,16 +14,6 @@ pub struct Product {
     pub(crate) nutriments: Option<Nutriments>,
 }
 
-impl Into<MealContent> for Product{
-    fn into(self) -> MealContent {
-        MealContent {
-            product: self,
-            quantity: 1.0,
-            id: Uuid::new_v4(),
-        }
-    }
-
-}
 
 impl Product {
     pub(crate) fn search_local(con: &mut Connection, query: &str) -> Vec<Product> {

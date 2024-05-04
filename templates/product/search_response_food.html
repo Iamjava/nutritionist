@@ -1,0 +1,8 @@
+{% for food in foods %}
+<li>
+    <form action='/meals/{{meal_id}}' method='post'>
+    <input type='hidden' name='product_code' value='{{food.id}}'>{{food.description}}
+    <input type='number' name='amount' value='1' step="1">Gramm
+    <input type='submit' value='Add to Meal'></form>
+</li>
+{% endfor %}

@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::db::connector::default_save_expire;
 use crate::models::models::{NutritionistSearchQuery, RedisORM};
 use crate::models::product::Product;
-use crate::open_food_facts::models::OpenFoodFactsQuery;
 
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

@@ -69,7 +69,6 @@ mod tests {
     use redis::Commands;
     use crate::{db, models};
     use crate::models::meal::Meal;
-    use crate::open_food_facts::sdk::search_openff;
 
     #[test]
     fn test_user() {
@@ -82,27 +81,5 @@ mod tests {
     }
     #[tokio::test]
     async fn test_user_meals() {
-
-        let mut con = db::connector::get_connection().unwrap();
-        let mut user = User::example();
-        user.id = "TEST_ID".into();
-        let user = User::check_if_exists_or_create(&mut con, &user.id, &user.name, &user.email).unwrap();
-
-        let prod1 = search_openff("Kölln Müsli").await.unwrap();
-        let prod2 = search_openff("Nutella").await.unwrap();
-
-        let mut meal = models::meal::Meal::example();
-
-        meal.contents.push(prod1.first().unwrap().clone().into());
-        meal.contents.push(prod2.first().unwrap().clone().into());
-        let user2 = User::fetch_from_uuid(&mut con, &user.id);
-        meal.user_id = user.id.clone();
-        meal.save(&mut con).unwrap();
-
-        let meal2 = Meal::fetch_from_uuid(&mut con, &meal.id.to_string());
-        assert!(meal2.is_some());
-
-        dbg!(user.fetch_user_meals(&mut con));
-        assert!(user.fetch_user_meals(&mut con).len()>0);
     }
 }

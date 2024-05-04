@@ -1,7 +1,6 @@
 use axum::error_handling::HandleErrorLayer;
 use axum::http::{Response, StatusCode, Uri};
 use axum::routing::{delete, get, post};
-use tera::Tera;
 use crate::app::forms::ProductForm;
 use crate::app::handler;
 use crate::models::models::NutritionistSearchQuery;
@@ -23,10 +22,6 @@ use tower_sessions::{
 use crate::app::handler::handle_meals;
 
 // static once cell for Templates with tera
-pub static TEMPLATES: once_cell::sync::Lazy<Tera> = once_cell::sync::Lazy::new(|| {
-    let tera = Tera::new("templates/**/*").unwrap();
-    tera
-});
 
 
 pub async fn serve() {
@@ -68,10 +63,8 @@ pub async fn serve() {
 
     let port = std::env::var("NUT_PORT").unwrap_or("8000".to_string());
     let app = Router::new()
-        .route("/", get(|| async { Response::builder().status(StatusCode::SEE_OTHER).header("Location", "/search").body("".to_string()).unwrap() }))
-        .route("/:id/search", post(handler::handle_search_post_meal_add))
-        .route("/search", get(handler::handle_search))
-        .route("/test", post(|| async { handler::handle_search_test().await }))
+        .route("/", get(|| async { Response::builder().status(StatusCode::SEE_OTHER).header("Location", "/meals").body("".to_string()).unwrap() }))
+        .route("/:id/search", post(handler::search_usda_handler))
         .route("/newmeal", get(|| async { handler::handle_create_meal().await }))
         .route("/meals", get(handle_meals))
         .route("/meals/:id/search", get(|id: Path<String>| async { handler::handle_search_meal_add(id).await }))
@@ -80,6 +73,7 @@ pub async fn serve() {
         .route("/meals/:id/:code", delete(|info: Path<(String,String)>| async { handler::remove_product_from_meal_handler(info).await }))
         .route("/products/:code", delete(|info: Path<(String)>| async { handler::show_product_handler(info).await }))
         .route("/foo/:id", get(authenticated))
+        .route("/usda", get(handler::search_usda_handler))
         .route("/logout", get(logout))
         .layer(oidc_login_service)
         //.route("/", get(maybe_authenticated))
@@ -111,3 +105,4 @@ async fn maybe_authenticated(
 async fn logout(logout: OidcRpInitiatedLogout) -> impl IntoResponse {
     logout.with_post_logout_redirect(Uri::from_static("https://google.de"))
 }
+
