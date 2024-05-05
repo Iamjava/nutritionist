@@ -21,5 +21,3 @@ services:
       CLIENT_SECRET: ${SEC}
       APP_URL:  https://nutritionist.corgijan.dev
       NUT_PORT: 10001
-    volumes:
-      - ./local-data:/app/local-data:z

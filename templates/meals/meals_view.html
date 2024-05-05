@@ -1,13 +1,27 @@
-<html id="prodlist">
-<head>
-    <title>Meal View</title>
-</head>
-    <body>
-        <h1> Meals of {{username}}</h1>
 
-    {% for meal in meals %}
-        <a href='/meals/{{meal.id}}'>Meal {{meal.id}}</a><br>
-    {% endfor %}
-
-    </body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="text-center">Meals</h1>
+            <table class="table table-bordered text-center mt-3">
+                <tbody>
+                {% for meal in meals %}
+                <tr>
+                    <td >
+                    <a href='/meals/{{meal.id}}'>Meal {{meal.id}}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="2">
+                        <a href="/newmeal">Add Meal</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

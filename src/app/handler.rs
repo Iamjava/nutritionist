@@ -4,6 +4,7 @@ use askama::Template;
 use crate::usda::search::{Food, NutrientValues}; // bring trait in scope
 use axum::http::{Response, StatusCode};
 use std::fs;
+use std::ops::Mul;
 use axum::extract::Path;
 use axum::Form;
 use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
@@ -90,6 +91,17 @@ struct MealView {
     macros: NutrientValues,
     edit: bool,
 }
+
+impl Mul<f32> for Food {
+    type Output = Food;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        let mut f = self.clone();
+        f.nutrient_values = self.nutrient_values*rhs;
+        f
+    }
+}
+
 // Display a meal
 pub async fn handle_meal(Path(id): Path<String>) -> Response<String> {
     let mut con = crate::db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
@@ -99,7 +111,7 @@ pub async fn handle_meal(Path(id): Path<String>) -> Response<String> {
     // Using the tera Context struct
     for content in  meal.contents.iter_mut(){
         let mut c = content.clone();
-        content.product = c.product.generate_nutrient_values();
+        content.product = c.product.generate_nutrient_values()*content.quantity*0.01;
     }
     let macros = meal.get_macros();
     let t = MealView { meal, macros, edit: true};
@@ -144,6 +156,11 @@ pub async fn remove_product_from_meal_handler(Path((meal_id,id)): Path<(String,S
     dbg!(meal.contents.len());
     meal.contents.retain(|x| x.id != id.to_string().parse().unwrap());
     dbg!(meal.contents.len());
+    for content in  meal.contents.iter_mut(){
+        let mut c = content.clone();
+        content.product = c.product.generate_nutrient_values()*content.quantity*0.01;
+    }
+    let macros = meal.get_macros();
 
     let macros = meal.get_macros();
     meal.save(&mut con).unwrap();

@@ -2,34 +2,25 @@
 <html lang="en" id="prodlist">
 <head>
     <link rel="stylesheet" href="https://bootswatch.com/5/flatly/bootstrap.min.css" />
-    <title>{% block title %}{% endblock title %} - My Webpage</title>
+    <title>{% block title %}{% endblock title %} Nutritionist</title>
     {% block head %}
     {% endblock head %}
 </head>
 <body id="body">
 <nav class="navbar navbar-expand-lg bg-primary" data-bs-theme="dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">Navbar</a>
+        <a class="navbar-brand" href="/">Nutritionist</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarColor01">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="#">Home
+                    <a class="nav-link active" href="/">Meals
                         <span class="visually-hidden">(current)</span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Features</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Pricing</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">About</a>
-                </li>
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown" style="visibility: hidden">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Dropdown</a>
                     <div class="dropdown-menu">
                         <a class="dropdown-item" href="#">Action</a>
@@ -40,7 +31,7 @@
                     </div>
                 </li>
             </ul>
-            <form class="d-flex">
+            <form class="d-flex"  style="visibility: hidden">
                 <input class="form-control me-sm-2" type="search" placeholder="Search">
                 <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
             </form>
@@ -51,7 +42,7 @@
     {% endblock content %}</div>
 <div id="footer">
     {% block footer %}
-    &copy; Copyright 2008 by <a href="http://domain.invalid/">you</a>.
+    &copy; Copyright 2024 by <a href="http://www.corgijan.dev/">me</a>.
     {% endblock footer %}
 </div>
 <script src="https://unpkg.com/htmx.org@1.9.11"></script>
