@@ -4,3 +4,4 @@ openff-dump
 target
 keycloak_example
 off-scripts
+.env

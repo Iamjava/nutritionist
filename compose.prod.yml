@@ -17,8 +17,8 @@ services:
     environment:
       REDIS_HOST: keydb
       ISSUER: https://auth.corgijan.dev/realms/nutritionist
-      CLIENT_ID: nutritionist
-      CLIENT_SECRET: yU2ToLMojyahlVon1WmxDpBda1foyFua
+      CLIENT_ID: ${CID}
+      CLIENT_SECRET: ${SEC}
       APP_URL:  https://nutritionist.corgijan.dev
       NUT_PORT: 10001
     volumes:
