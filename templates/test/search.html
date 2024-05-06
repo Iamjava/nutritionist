@@ -1,35 +1,48 @@
 {% extends "base.html" %}
 {% block content %}
-<script src="https://unpkg.com/htmx.org@1.9.11"></script>
-<!-- have a button POST a click via AJAX -->
-
-
 <span class="htmx-indicator">
 <!---<img src="/img/bars.svg"/>-->
 Searching...
 </span>
-<div "container mt-5">
+<div class="container mt-5 p-3">
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <h1 class="text-center">Search</h1>
-        <table class="table table-bordered text-center mt-3">
-            <tbody>
-
             <input class="form-control" type="search"
                    name="query" placeholder="Begin Typing To Search Foods..."
+                   autocomplete="off"
                    hx-post="/{{meal_id}}/search"
                    hx-trigger="input changed delay:600ms, search"
                    hx-target="#search-results"
-                   hx-indicator=".htmx-indicator">
-            </tbody>
+                   hx-indicator=".htmx-indicator"
+            >
             <td>
-                <div id="search-results">
+                <div id="search-results" class="">
                 </div>
             </td>
-        </table>
         <div class="mt-4">
         </div>
     </div>
 </div>
 </div>
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}

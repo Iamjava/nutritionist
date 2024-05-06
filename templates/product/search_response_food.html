@@ -1,8 +1,44 @@
-{% for food in foods %}
-<li>
-    <form action='/meals/{{meal_id}}' method='post'>
-    <input type='hidden' name='product_code' value='{{food.id}}'>{{food.description}}
-    <input type='number' name='amount' value='1' step="1">Gramm
-    <input type='submit' value='Add to Meal'></form>
-</li>
-{% endfor %}
+            <table class="table table-bordered text-center mt-3">
+                <tbody>
+                {% for food in foods %}
+                <tr>
+                    <td>
+                        {{food.description}}
+                    </td>
+                    <td >
+                            <!-- Button trigger modal -->
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal{{food.id}}">
+                                ADD
+                            </button>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="exampleModal{{food.id}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="exampleModalLabel">{{food.description}}</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form action='/meals/{{meal_id}}' method='post'>
+                                            <div class="d-flex flex-row ">
+                                                <input type='hidden' name='product_code' value='{{food.id}}'>
+                                                <input type='number' class="form-control mb-2" name='amount' value='1' step="1" style="max-width:100px">
+                                                <div class="p-3">
+                                                    Gramm
+                                                </div>
+                                            </div>
+                                            <input type='submit' class="form-control btn btn-primary" value='Add to Meal'>
+                                            </form>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
