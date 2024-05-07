@@ -1,14 +1,13 @@
+use crate::db::connector::default_save_expire;
+use crate::models::models::RedisORM;
+use redis::Connection;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt::Debug;
 use std::ops::Mul;
-use redis::Connection;
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::db::connector::default_save_expire;
-use crate::models::models::RedisORM;
 
-
-#[derive(Deserialize,Clone,Serialize,Debug)]
+#[derive(Deserialize, Clone, Serialize, Debug)]
 struct Nutrient {
     #[serde(rename = "nutrientId")]
     id: i32,
@@ -33,7 +32,16 @@ impl Default for Nutrient {
     }
 }
 
-#[derive(Deserialize,Clone,Serialize)]
+impl Mul<f32> for Food {
+    type Output = Food;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        let mut f = self.clone();
+        f.nutrient_values = self.nutrient_values * rhs;
+        f
+    }
+}
+#[derive(Deserialize, Clone, Serialize)]
 pub struct Food {
     pub description: String,
     #[serde(rename = "foodNutrients")]
@@ -54,13 +62,13 @@ impl Debug for Food {
 }
 
 impl Food {
-    pub fn generate_nutrient_values(self) -> Self{
-        Food{
+    pub fn generate_nutrient_values(self) -> Self {
+        Food {
             nutrient_values: self.get_numerical_macros(),
             ..self
         }
     }
-    pub fn new(id:i32,description: impl Into<String>, nutrients: Vec<Nutrient>) -> Self {
+    pub fn new(id: i32, description: impl Into<String>, nutrients: Vec<Nutrient>) -> Self {
         let mut food = Food {
             description: description.into(),
             nutrients,
@@ -72,7 +80,10 @@ impl Food {
     }
 }
 impl RedisORM for Food {
-    fn example() -> Self where Self: Sized {
+    fn example() -> Self
+    where
+        Self: Sized,
+    {
         Food {
             description: "".to_string(),
             nutrients: vec![],
@@ -90,8 +101,8 @@ impl RedisORM for Food {
     }
 }
 
-#[derive(Deserialize,Clone,Serialize,Debug)]
-pub struct NutrientValues{
+#[derive(Deserialize, Clone, Serialize, Debug)]
+pub struct NutrientValues {
     pub carbohydrates: f32,
     pub proteins: f32,
     pub fats: f32,
@@ -103,7 +114,7 @@ pub struct NutrientValues{
 }
 impl Default for NutrientValues {
     fn default() -> Self {
-        NutrientValues{
+        NutrientValues {
             carbohydrates: 0.0,
             proteins: 0.0,
             fats: 0.0,
@@ -120,7 +131,7 @@ impl Mul<f32> for NutrientValues {
     type Output = NutrientValues;
 
     fn mul(self, rhs: f32) -> Self::Output {
-        NutrientValues{
+        NutrientValues {
             carbohydrates: self.carbohydrates * rhs,
             proteins: self.proteins * rhs,
             fats: self.fats * rhs,
@@ -133,37 +144,81 @@ impl Mul<f32> for NutrientValues {
     }
 }
 
-impl Food{
-    pub fn get_numerical_macros(&self) -> NutrientValues{
+impl Food {
+    pub fn get_numerical_macros(&self) -> NutrientValues {
         let nuts = self.nutrients.clone();
         let default_nut = Nutrient::default();
         // let energy either ENERGY or Energy (Atwater General Factors)
 
-        NutrientValues{
-            carbohydrates: nuts.iter().find(|x| x.name == "Carbohydrate, by difference").unwrap_or(&default_nut).amount.unwrap_or(0.0),
-            proteins: nuts.iter().find(|x| x.name == "Protein").unwrap_or(&default_nut).amount.unwrap_or(0.0),
-            fats: nuts.iter().find(|x| x.name == "Total lipid (fat)").unwrap_or(&default_nut).amount.unwrap_or(0.0),
-            energy: nuts.iter().find(|x| x.name == "Energy" || x.name=="Energy (Atwater Specific Factors)").unwrap_or(&default_nut).amount.unwrap_or(0.0),
-            fiber: nuts.iter().find(|x| x.name == "Fiber, total dietary").unwrap_or(&default_nut).amount.unwrap_or(0.0),
-            sodium: nuts.iter().find(|x| x.name == "Sodium, Na").unwrap_or(&default_nut).amount.unwrap_or(0.0) as f32 *0.001,
-            salt: nuts.iter().find(|x| x.name == "Sodium, Na").unwrap_or(&default_nut).amount.unwrap_or(0.0) as f32 *2.5f32 * 0.001,
-            sugar: nuts.iter().find(|x| x.name == "Total Sugars").unwrap_or(&default_nut).amount.unwrap_or(0.0),
+        NutrientValues {
+            carbohydrates: nuts
+                .iter()
+                .find(|x| x.name == "Carbohydrate, by difference")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0),
+            proteins: nuts
+                .iter()
+                .find(|x| x.name == "Protein")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0),
+            fats: nuts
+                .iter()
+                .find(|x| x.name == "Total lipid (fat)")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0),
+            energy: nuts
+                .iter()
+                .find(|x| x.name == "Energy" || x.name == "Energy (Atwater Specific Factors)")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0),
+            fiber: nuts
+                .iter()
+                .find(|x| x.name == "Fiber, total dietary")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0),
+            sodium: nuts
+                .iter()
+                .find(|x| x.name == "Sodium, Na")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0) as f32
+                * 0.001,
+            salt: nuts
+                .iter()
+                .find(|x| x.name == "Sodium, Na")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0) as f32
+                * 2.5f32
+                * 0.001,
+            sugar: nuts
+                .iter()
+                .find(|x| x.name == "Total Sugars")
+                .unwrap_or(&default_nut)
+                .amount
+                .unwrap_or(0.0),
         }
     }
-
 }
 
-#[derive(Deserialize,Clone,Serialize,Debug)]
+#[derive(Deserialize, Clone, Serialize, Debug)]
 pub struct SearchResult {
     foods: Vec<Food>,
 }
 
-pub(crate) async fn query_usda_food_database(search_term: &str) -> Result<Vec<Food>, Box<dyn Error>> {
+pub(crate) async fn query_usda_food_database(
+    search_term: &str,
+) -> Result<Vec<Food>, Box<dyn Error>> {
     let mut con = crate::db::connector::get_connection().unwrap();
     let api_key = "DEMO_KEY"; // Replace 'DEMO_KEY' with your actual API key
-    //let url = format!("https://api.nal.usda.gov/fdc/v1/foods/search?query={}&dataType=Foundation,SR%20Legacy,Survey%20%28FNDDS%29,Branded&pageSize=30&pageNumber=1&sortBy=dataType.keyword&sortOrder=asc&api_key={}", search_term, api_key);
+                              //let url = format!("https://api.nal.usda.gov/fdc/v1/foods/search?query={}&dataType=Foundation,SR%20Legacy,Survey%20%28FNDDS%29,Branded&pageSize=30&pageNumber=1&sortBy=dataType.keyword&sortOrder=asc&api_key={}", search_term, api_key);
     let url = format!("https://api.nal.usda.gov/fdc/v1/foods/search?query={}&dataType=Foundation,SR%20Legacy&pageSize=30&pageNumber=1&sortBy=dataType.keyword&sortOrder=asc&api_key={}", search_term, api_key);
-    let mut result= vec![];
+    let mut result = vec![];
 
     let response = reqwest::get(&url).await?;
     if response.status().is_success() {
@@ -196,12 +251,15 @@ pub struct FoodSearchResult {
     pub(crate) query: String,
 }
 
-impl RedisORM  for FoodSearchResult {
+impl RedisORM for FoodSearchResult {
     fn save(&self, con: &mut Connection) -> redis::RedisResult<()> {
         default_save_expire(con, "usda_search", &self.query, self, 60 * 60 * 24 * 7)
     }
 
-    fn example() -> Self where Self: Sized {
+    fn example() -> Self
+    where
+        Self: Sized,
+    {
         FoodSearchResult {
             products: vec![],
             query: "".to_string(),
@@ -215,7 +273,6 @@ impl RedisORM  for FoodSearchResult {
     fn redis_id(&self) -> String {
         self.query.clone()
     }
-
 }
 
 pub async fn cached_search(query: &str) -> Vec<Food> {
@@ -238,20 +295,23 @@ pub async fn cached_search(query: &str) -> Vec<Food> {
 mod tests {
 
     #![allow(dead_code)]
-    use uuid::Uuid;
     use crate::models::models::RedisORM;
     use crate::models::user::User;
+    use crate::usda::search::{query_usda_food_database, Food};
     use crate::{db, models};
-    use crate::usda::search::{Food, query_usda_food_database};
+    use uuid::Uuid;
 
     #[tokio::test]
     async fn test_usda_search() {
-        let foods = crate::usda::search::query_usda_food_database("apple").await.unwrap();
+        let foods = crate::usda::search::query_usda_food_database("apple")
+            .await
+            .unwrap();
         assert!(!foods.is_empty());
     }
     #[tokio::test]
-    async fn create_test_data(){
-        let mut con = db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
+    async fn create_test_data() {
+        let mut con = db::connector::get_connection()
+            .expect("Could not connect to redis,maybe redis is not running");
 
         let mut test_product = Food::example();
         test_product.id = 1;
@@ -277,8 +337,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn meal_test(){
-        let mut con = db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
+    async fn meal_test() {
+        let mut con = db::connector::get_connection()
+            .expect("Could not connect to redis,maybe redis is not running");
         let mut meal = models::meal::Meal::example();
         meal.id = Uuid::new_v4();
         meal.user_id = "12345".to_string();
@@ -289,8 +350,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn food_test(){
-        let mut con = db::connector::get_connection().expect("Could not connect to redis,maybe redis is not running");
+    async fn food_test() {
+        let mut con = db::connector::get_connection()
+            .expect("Could not connect to redis,maybe redis is not running");
         let mut food = Food::example();
         food.id = 1;
         food.description = "Test Product".to_string();
@@ -300,9 +362,8 @@ mod tests {
         assert_eq!(food.description, "Test Product");
     }
     #[tokio::test]
-    async fn search_test(){
+    async fn search_test() {
         let search = query_usda_food_database("tomato").await.unwrap();
         assert!(search.len() > 0);
-
     }
 }

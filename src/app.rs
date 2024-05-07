@@ -1,3 +1,4 @@
-pub(crate) mod server;
-mod handler;
 mod forms;
+mod handler;
+mod meal_handler;
+pub(crate) mod server;
