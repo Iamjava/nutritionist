@@ -67,6 +67,7 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
 
     // sort by date
     meal_combos.sort_by(|a,b| a.0.cmp(&b.0));
+    meal_combos.reverse();
 
     let t = MealsTemplate {
         meal_id: "test",
@@ -104,7 +105,6 @@ pub async fn handle_create_meal(Path((meal_type,date_str)): Path<(String, String
     }
 
     for meal in meals.iter() {
-        dbg!(meal.date.date_naive(), meal.date.date_naive() == date);
         if meal.date.date_naive() == date && meal.meal_type == meal_type {
             return Response::builder()
                 .status(StatusCode::SEE_OTHER)
@@ -117,10 +117,10 @@ pub async fn handle_create_meal(Path((meal_type,date_str)): Path<(String, String
     let mut meal = Meal::example();
     meal.meal_type = meal_type;
     meal.date = DateTime::from(date_time.checked_add_days(chrono::Days::new(1)).unwrap());
-    dbg!(date_str,&meal.meal_type,&meal.date);
 
     let mut con = crate::db::connector::get_connection()
         .expect("Could not connect to redis,maybe redis is not running");
+
     meal.save(&mut con).expect("DIDNT SAVE");
     // send a redirect to the newly created meal
     Response::builder()
