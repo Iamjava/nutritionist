@@ -4,24 +4,28 @@
 <div class="container mt-5 p-3">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <h1 class="text-center">Meals</h1>
+            <h1 class="text-center">Meals {{date}}</h1>
             <table class="table table-bordered text-center mt-3">
                 <tbody>
                 {% for meal in meals %}
-                <tr>
-                    <td >
-                    <a href='/meals/{{meal.id}}'>Meal {{meal.id}}</a>
-                    </td>
-                </tr>
+                    <tr>
+                        <td >
+                            <a href='/meals/{{meal.id}}'>{{meal.to_meal_type()}} </a>
+                        </td>
+                    </tr>
                 {% endfor %}
-                <tr>
-                    <td colspan="2">
-                        <a href="/newmeal">Add Meal</a>
-                    </td>
-                </tr>
+                    <tr>
+                        <td >
+                            <a href="/newmeal/breakfast" class="btn btn-primary">Add Brekfast</a>
+                            <a href="/newmeal/lunch" class="btn btn-secondary">Add Lunch</a>
+                            <a href="/newmeal/dinner" class="btn btn-success">Add Dinner</a>
+                            <a href="/newmeal/snack" class="btn btn-warning">Add Snack</a>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
+        <center><a href="/" class="btn btn-primary">Edit Older Dates</a></center>
     </div>
 </div>
 {% endblock content %}

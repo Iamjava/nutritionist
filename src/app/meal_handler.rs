@@ -1,6 +1,7 @@
+use std::cmp::PartialEq;
 use crate::app::forms::ProductForm;
 use crate::db;
-use crate::models::meal::Meal;
+use crate::models::meal::{Meal, MealType};
 use crate::models::models::RedisORM;
 use crate::models::user::User;
 use crate::usda::search::{Food, NutrientValues};
@@ -10,6 +11,7 @@ use axum::http::{Response, StatusCode};
 use axum::Form;
 use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
 use uuid::Uuid;
+use crate::models::meal::MealType::Snack;
 
 #[derive(Template)] // this will generate the code...
 #[template(path = "meals/meals_view.html")] // using the template in this path, relative
@@ -19,6 +21,7 @@ struct MealsTemplate<'a> {
     meal_id: &'a str,
     username: &'a str,
     meals: Vec<Meal>,
+    date: chrono::NaiveDate,
 }
 
 #[derive(Template)]
@@ -58,11 +61,11 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
         println!("{}: {:?}", key, value);
     }
 
-
     let t = MealsTemplate {
         meal_id: "test",
         meals,
         username: claims.preferred_username().unwrap(),
+        date: chrono::Utc::now().date_naive(),
     };
 
     Response::builder()
@@ -72,9 +75,36 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
         .unwrap()
 }
 
+
 // Redirect to a newly created meal /meal/:id
-pub async fn handle_create_meal() -> Response<String> {
-    let meal = Meal::example();
+pub async fn handle_create_meal(meal_type: Path<String>, oidc_claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> Response<String> {
+    let mut con = crate::db::connector::get_connection()
+        .expect("Could not connect to redis,maybe redis is not running");
+    let meal_type = match meal_type.to_string().as_str() {
+        "lunch" => MealType::Lunch,
+        "dinner" => MealType::Dinner,
+        "snack" => Snack,
+        _ => MealType::Breakfast,
+    };
+    let today = chrono::Utc::now().date_naive();
+    //hier userspezifisch
+    let creds = oidc_claims.unwrap();
+    let user_name = creds.preferred_username().unwrap().to_string();
+    // hier die meals from user holen
+    let meals = Meal::all(&mut con);
+    for meal in meals.iter() {
+        if meal.date.date_naive() == today && meal.meal_type == meal_type {
+            return Response::builder()
+                .status(StatusCode::SEE_OTHER)
+                .header("Location", format!("/meals/{}", meal.id))
+                .body("".into())
+                .unwrap();
+        }
+    }
+
+    let mut meal = Meal::example();
+    meal.meal_type = meal_type;
+
     let mut con = crate::db::connector::get_connection()
         .expect("Could not connect to redis,maybe redis is not running");
     meal.save(&mut con).expect("DIDNT SAVE");

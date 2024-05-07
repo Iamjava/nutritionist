@@ -1,5 +1,5 @@
 use crate::app::forms::ProductForm;
-use crate::app::meal_handler::handle_meals;
+use crate::app::meal_handler::{handle_create_meal, handle_meals};
 use crate::app::{handler, meal_handler};
 use axum::error_handling::HandleErrorLayer;
 use axum::extract::Path;
@@ -67,8 +67,8 @@ pub async fn serve() {
         )
         .route("/:id/search", post(handler::search_usda_handler))
         .route(
-            "/newmeal",
-            get(|| async { meal_handler::handle_create_meal().await }),
+            "/newmeal/:type",
+            get(handle_create_meal),
         )
         .route("/meals", get(handle_meals))
         .route(

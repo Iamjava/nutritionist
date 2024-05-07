@@ -5,8 +5,9 @@ use crate::models::models::RedisORM;
 use crate::usda::search::{Food, NutrientValues};
 use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
-use std::fmt::{Debug, Error};
+use std::fmt::{Debug, Display, Error};
 use std::ops::{Add, Mul};
+use tower_sessions::cookie::time::error::Format;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -15,8 +16,45 @@ pub(crate) struct Meal {
     pub(crate) id: Uuid,
     pub(crate) user_id: String,
     pub(crate) date: chrono::DateTime<chrono::Utc>,
+    pub(crate) meal_type: MealType,
 }
 
+impl Meal{
+    pub fn to_date(&self) -> String {
+        self.date.date_naive().to_string()
+    }
+    pub fn to_meal_type(&self) -> String {
+        self.meal_type.to_string()
+    }
+}
+
+impl Display for Meal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {}"
+           , self.meal_type ,self.date.date_naive()
+        )
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub(crate) enum MealType{
+    Breakfast,
+    Lunch,
+    Dinner,
+    Snack,
+}
+impl Display for MealType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MealType::Breakfast => write!(f, "Breakfast"),
+            MealType::Lunch => write!(f, "Lunch"),
+            MealType::Dinner => write!(f, "Dinner"),
+            MealType::Snack => write!(f, "Snack"),
+        }
+    }
+}
 impl Add for NutrientValues {
     type Output = NutrientValues;
 
@@ -95,6 +133,7 @@ impl RedisORM for Meal {
             id: Uuid::new_v4(),
             user_id: "12345".to_string(),
             date: chrono::Utc::now(),
+            meal_type: MealType::Breakfast,
         }
     }
 

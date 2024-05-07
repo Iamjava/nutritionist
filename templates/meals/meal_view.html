@@ -10,7 +10,7 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <h1 class="text-center">Meal {{ meal.id }}</h1>
+            <h1 class="text-center">Meal {{ meal }} </h1>
             <table class="table table-bordered text-center mt-3">
                 <tbody>
                 {% for content in meal.contents %}
@@ -29,7 +29,7 @@
                 {% endfor %}
                 <tr>
                     <td colspan="{% if edit %}4{% else %}2{% endif %}">
-                        <a href="/meals/{{ meal.id }}/search">Add Content</a>
+                        <a href="/meals/{{ meal.id }}/search" class="btn btn-primary">Add Content</a>
                     </td>
                 </tr>
                 </tbody>
