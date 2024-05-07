@@ -19,13 +19,51 @@ pub(crate) struct Meal {
     pub(crate) meal_type: MealType,
 }
 
-impl Meal{
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct DailyMealCombo {
+    pub(crate) date: chrono::NaiveDate,
+    pub(crate) breakfast: Option<Meal>,
+    pub(crate) lunch: Option<Meal>,
+    pub(crate) dinner: Option<Meal>,
+    pub(crate) snack: Option<Meal>,
+}
+
+impl Meal {
     pub fn to_date(&self) -> String {
         self.date.date_naive().to_string()
     }
     pub fn to_meal_type(&self) -> String {
         self.meal_type.to_string()
     }
+}
+impl DailyMealCombo {
+    pub fn to_date(&self) -> String {
+        self.date.to_string()
+    }
+
+    pub fn from_meals_vec(meals: Vec<Meal>) -> DailyMealCombo {
+        let mut breakfast = None;
+        let mut lunch = None;
+        let mut dinner = None;
+        let mut snack = None;
+        let date = meals[0].date.date_naive();
+        for meal in meals.into_iter() {
+            match meal.meal_type {
+                MealType::Breakfast => breakfast = Some(meal),
+                MealType::Lunch => lunch = Some(meal),
+                MealType::Dinner => dinner = Some(meal),
+                MealType::Snack => snack = Some(meal),
+            }
+        }
+        DailyMealCombo {
+            date,
+            breakfast,
+            lunch,
+            dinner,
+            snack,
+        }
+    }
+
 }
 
 impl Display for Meal {

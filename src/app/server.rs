@@ -67,7 +67,7 @@ pub async fn serve() {
         )
         .route("/:id/search", post(handler::search_usda_handler))
         .route(
-            "/newmeal/:type",
+            "/newmeal/:type/:date",
             get(handle_create_meal),
         )
         .route("/meals", get(handle_meals))

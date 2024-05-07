@@ -1,7 +1,8 @@
 use std::cmp::PartialEq;
+use std::collections::HashMap;
 use crate::app::forms::ProductForm;
 use crate::db;
-use crate::models::meal::{Meal, MealType};
+use crate::models::meal::{DailyMealCombo, Meal, MealType};
 use crate::models::models::RedisORM;
 use crate::models::user::User;
 use crate::usda::search::{Food, NutrientValues};
@@ -10,18 +11,18 @@ use axum::extract::Path;
 use axum::http::{Response, StatusCode};
 use axum::Form;
 use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
+use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
+use tower_sessions::cookie::time::Date;
 use uuid::Uuid;
 use crate::models::meal::MealType::Snack;
 
 #[derive(Template)] // this will generate the code...
 #[template(path = "meals/meals_view.html")] // using the template in this path, relative
-                                            // to the `templates` dir in the crate root
 struct MealsTemplate<'a> {
     // the name of the struct can be anything
     meal_id: &'a str,
     username: &'a str,
-    meals: Vec<Meal>,
-    date: chrono::NaiveDate,
+    meals: Vec<(NaiveDate,DailyMealCombo)>,
 }
 
 #[derive(Template)]
@@ -34,7 +35,6 @@ pub struct MealView {
 
 #[derive(Template)] // this will generate the code...
 #[template(path = "test/search.html")] // using the template in this path, relative
-                                       // to the `templates` dir in the crate root
 struct SearchTemplate<'a> {
     // the name of the struct can be anything
     meal_id: &'a str,
@@ -48,6 +48,7 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
     let username = claims.preferred_username().unwrap();
     // add meal to hashmap of meals where date is the key
     let mut hash_map = std::collections::HashMap::new();
+
     meals.iter().for_each(|meal| {
         if hash_map.contains_key(&meal.date.date_naive()) {
             let mut m: &mut Vec<Meal>  = hash_map.get_mut(&meal.date.date_naive()).unwrap();
@@ -56,16 +57,21 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
             hash_map.insert(meal.date.date_naive(), vec![meal.clone()]);
         }
     });
+    let mut meal_combos = Vec::new();
     //iterate hashmap and add to vector
     for (key, value) in hash_map.iter() {
-        println!("{}: {:?}", key, value);
+        let mut daily_meal = DailyMealCombo::from_meals_vec(value.clone());
+        daily_meal.date = key.clone();
+        meal_combos.push((key.clone(), daily_meal));
     }
+
+    // sort by date
+    meal_combos.sort_by(|a,b| a.0.cmp(&b.0));
 
     let t = MealsTemplate {
         meal_id: "test",
-        meals,
+        meals: meal_combos,
         username: claims.preferred_username().unwrap(),
-        date: chrono::Utc::now().date_naive(),
     };
 
     Response::builder()
@@ -77,23 +83,29 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
 
 
 // Redirect to a newly created meal /meal/:id
-pub async fn handle_create_meal(meal_type: Path<String>, oidc_claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> Response<String> {
+pub async fn handle_create_meal(Path((meal_type,date_str)): Path<(String, String)>, oidc_claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> Response<String> {
     let mut con = crate::db::connector::get_connection()
         .expect("Could not connect to redis,maybe redis is not running");
+
+    let date = date_str.parse::<NaiveDate>().unwrap();
+    let date_time: DateTime<Local> = Local.from_local_datetime(&date.into()).unwrap();
     let meal_type = match meal_type.to_string().as_str() {
         "lunch" => MealType::Lunch,
         "dinner" => MealType::Dinner,
         "snack" => Snack,
         _ => MealType::Breakfast,
     };
-    let today = chrono::Utc::now().date_naive();
-    //hier userspezifisch
     let creds = oidc_claims.unwrap();
     let user_name = creds.preferred_username().unwrap().to_string();
     // hier die meals from user holen
     let meals = Meal::all(&mut con);
     for meal in meals.iter() {
-        if meal.date.date_naive() == today && meal.meal_type == meal_type {
+        print!("{} {}", meal.date.date_naive(), meal.meal_type);
+    }
+
+    for meal in meals.iter() {
+        dbg!(meal.date.date_naive(), meal.date.date_naive() == date);
+        if meal.date.date_naive() == date && meal.meal_type == meal_type {
             return Response::builder()
                 .status(StatusCode::SEE_OTHER)
                 .header("Location", format!("/meals/{}", meal.id))
@@ -104,6 +116,8 @@ pub async fn handle_create_meal(meal_type: Path<String>, oidc_claims: Option<Oid
 
     let mut meal = Meal::example();
     meal.meal_type = meal_type;
+    meal.date = DateTime::from(date_time.checked_add_days(chrono::Days::new(1)).unwrap());
+    dbg!(date_str,&meal.meal_type,&meal.date);
 
     let mut con = crate::db::connector::get_connection()
         .expect("Could not connect to redis,maybe redis is not running");
@@ -202,4 +216,21 @@ pub async fn handle_add_content_to_meal(
         .header("Location", format!("/meals/{}", id))
         .body("".into())
         .unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{DateTime, NaiveDateTime};
+    use super::*;
+
+
+    #[test]
+    fn test_handle_create_meal() {
+        let mut con = crate::db::connector::get_connection()
+            .expect("Could not connect to redis,maybe redis is not running");
+        let mut new_meal = Meal::example();
+        let today = chrono::Utc::now().date_naive();
+        new_meal.date = chrono::Utc::now().checked_sub_months(chrono::Months::new(2)).unwrap();
+        new_meal.save(&mut con).unwrap()
+    }
 }

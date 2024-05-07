@@ -22,6 +22,7 @@ mod tests {
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e9").unwrap(),
             user_id: "12345".to_string(),
             date: chrono::Utc::now(),
+            meal_type: meal::MealType::Breakfast,
         };
         let mut con = connector::get_connection()
             .expect("Could not connect to redis,maybe redis is not running");
@@ -51,6 +52,7 @@ mod tests {
     #[tokio::test]
     async fn test_all_meals() {
         let test_meal = meal::Meal {
+            meal_type: meal::MealType::Breakfast,
             contents: vec![],
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e7").unwrap(),
             user_id: "12345".to_string(),
