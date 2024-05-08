@@ -22,7 +22,7 @@ struct MealsTemplate<'a> {
     meal_id: &'a str,
     username: &'a str,
     meals: Vec<(NaiveDate,DailyMealCombo)>,
-    date: NaiveDate,
+    today: NaiveDate,
     today_has_meal: bool,
 }
 
@@ -76,7 +76,7 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
         meal_id: "test",
         meals: meal_combos,
         username: claims.preferred_username().unwrap(),
-        date: Utc::now().date_naive(),
+        today: Utc::now().date_naive(),
         today_has_meal,
     };
 
@@ -105,11 +105,9 @@ pub async fn handle_create_meal(Path((meal_type,date_str)): Path<(String, String
     let user_name = creds.preferred_username().unwrap().to_string();
     // hier die meals from user holen
     let meals = Meal::all(&mut con);
-    for meal in meals.iter() {
-        print!("{} {}", meal.date, meal.meal_type);
-    }
 
     for meal in meals.iter() {
+        dbg!(&meal.date, &date, &meal.meal_type, &meal_type);
         if meal.date == date && meal.meal_type == meal_type {
             return Response::builder()
                 .status(StatusCode::SEE_OTHER)
@@ -121,8 +119,7 @@ pub async fn handle_create_meal(Path((meal_type,date_str)): Path<(String, String
 
     let mut meal = Meal::example();
     meal.meal_type = meal_type;
-    let today = Utc::now().naive_utc().date();
-    meal.date = today;
+    meal.date = date;
 
     let mut con = crate::db::connector::get_connection()
         .expect("Could not connect to redis,maybe redis is not running");
