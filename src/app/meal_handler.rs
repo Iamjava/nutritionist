@@ -12,7 +12,6 @@ use axum::http::{Response, StatusCode};
 use axum::Form;
 use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
 use chrono::{DateTime, Local, NaiveDate, TimeZone, Utc};
-use tower_sessions::cookie::time::Date;
 use uuid::Uuid;
 use crate::models::meal::MealType::Snack;
 
@@ -23,6 +22,8 @@ struct MealsTemplate<'a> {
     meal_id: &'a str,
     username: &'a str,
     meals: Vec<(NaiveDate,DailyMealCombo)>,
+    date: NaiveDate,
+    today_has_meal: bool,
 }
 
 #[derive(Template)]
@@ -50,11 +51,11 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
     let mut hash_map = std::collections::HashMap::new();
 
     meals.iter().for_each(|meal| {
-        if hash_map.contains_key(&meal.date.date_naive()) {
-            let mut m: &mut Vec<Meal>  = hash_map.get_mut(&meal.date.date_naive()).unwrap();
+        if hash_map.contains_key(&meal.date) {
+            let mut m: &mut Vec<Meal>  = hash_map.get_mut(&meal.date).unwrap();
             m.push(meal.clone());
         }else{
-            hash_map.insert(meal.date.date_naive(), vec![meal.clone()]);
+            hash_map.insert(meal.date, vec![meal.clone()]);
         }
     });
     let mut meal_combos = Vec::new();
@@ -68,11 +69,15 @@ pub async fn handle_meals(claims: Option<OidcClaims<EmptyAdditionalClaims>>) -> 
     // sort by date
     meal_combos.sort_by(|a,b| a.0.cmp(&b.0));
     meal_combos.reverse();
+    let today_has_meal = meal_combos.iter().find(|(date, _)| date == &Utc::now().date_naive()).is_some();
+    dbg!(today_has_meal);
 
     let t = MealsTemplate {
         meal_id: "test",
         meals: meal_combos,
         username: claims.preferred_username().unwrap(),
+        date: Utc::now().date_naive(),
+        today_has_meal,
     };
 
     Response::builder()
@@ -101,11 +106,11 @@ pub async fn handle_create_meal(Path((meal_type,date_str)): Path<(String, String
     // hier die meals from user holen
     let meals = Meal::all(&mut con);
     for meal in meals.iter() {
-        print!("{} {}", meal.date.date_naive(), meal.meal_type);
+        print!("{} {}", meal.date, meal.meal_type);
     }
 
     for meal in meals.iter() {
-        if meal.date.date_naive() == date && meal.meal_type == meal_type {
+        if meal.date == date && meal.meal_type == meal_type {
             return Response::builder()
                 .status(StatusCode::SEE_OTHER)
                 .header("Location", format!("/meals/{}", meal.id))
@@ -116,7 +121,8 @@ pub async fn handle_create_meal(Path((meal_type,date_str)): Path<(String, String
 
     let mut meal = Meal::example();
     meal.meal_type = meal_type;
-    meal.date = DateTime::from(date_time.checked_add_days(chrono::Days::new(1)).unwrap());
+    let today = Utc::now().naive_utc().date();
+    meal.date = today;
 
     let mut con = crate::db::connector::get_connection()
         .expect("Could not connect to redis,maybe redis is not running");
@@ -230,7 +236,7 @@ mod tests {
             .expect("Could not connect to redis,maybe redis is not running");
         let mut new_meal = Meal::example();
         let today = chrono::Utc::now().date_naive();
-        new_meal.date = chrono::Utc::now().checked_sub_months(chrono::Months::new(2)).unwrap();
+        new_meal.date = today;
         new_meal.save(&mut con).unwrap()
     }
 }

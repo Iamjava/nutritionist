@@ -7,6 +7,7 @@ use redis::{Connection, RedisResult};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Error};
 use std::ops::{Add, Mul};
+use chrono::NaiveDate;
 use tower_sessions::cookie::time::error::Format;
 use uuid::Uuid;
 
@@ -15,7 +16,7 @@ pub(crate) struct Meal {
     pub(crate) contents: Vec<MealContent>,
     pub(crate) id: Uuid,
     pub(crate) user_id: String,
-    pub(crate) date: chrono::DateTime<chrono::Utc>,
+    pub(crate) date: chrono::NaiveDate,
     pub(crate) meal_type: MealType,
 }
 
@@ -30,7 +31,7 @@ pub(crate) struct DailyMealCombo {
 
 impl Meal {
     pub fn to_date(&self) -> String {
-        self.date.date_naive().to_string()
+        self.date.to_string()
     }
     pub fn to_meal_type(&self) -> String {
         self.meal_type.to_string()
@@ -46,7 +47,7 @@ impl DailyMealCombo {
         let mut lunch = None;
         let mut dinner = None;
         let mut snack = None;
-        let date = meals[0].date.date_naive();
+        let date = meals[0].date;
         for meal in meals.into_iter() {
             match meal.meal_type {
                 MealType::Breakfast => breakfast = Some(meal),
@@ -71,7 +72,7 @@ impl Display for Meal {
         write!(
             f,
             "{} {}"
-           , self.meal_type ,self.date.date_naive()
+           , self.meal_type ,self.date
         )
     }
 }
@@ -170,7 +171,7 @@ impl RedisORM for Meal {
             contents: vec![],
             id: Uuid::new_v4(),
             user_id: "12345".to_string(),
-            date: chrono::Utc::now(),
+            date: chrono::Utc::now().date_naive(),
             meal_type: MealType::Breakfast,
         }
     }

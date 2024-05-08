@@ -52,7 +52,37 @@
             {% endif %}
         </div>
         {% endfor %}
-        <center><a href="/" class="btn btn-primary">Edit Older Dates</a></center>
+
+        {% if  !today_has_meal %}
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal">
+                Add Meal for Today
+            </button>
+
+            <!-- Modal -->
+            <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="exampleModalLabel">Create Meal for Toda</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="d-flex flex-row ">
+                                    <a href="/newmeal/breakfast/{{date}}" class="btn btn-primary">Add Brekfast</a>
+                                    <a href="/newmeal/lunch/{{date}}" class="btn btn-secondary">Add Lunch</a>
+                                    <a href="/newmeal/dinner/{{date}}" class="btn btn-success">Add Dinner</a>
+                                    <a href="/newmeal/snack/{{date}}" class="btn btn-warning">Add Snack</a>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <input type='submit' class="btn btn-primary" value='Add to Meal'>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}
