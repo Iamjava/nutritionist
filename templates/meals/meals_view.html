@@ -11,9 +11,9 @@
     }
 </style>
 <div class="container mt-5 p-3">
-    <div class="row justify-content-center">
+    <div class="column justify-content-center">
         {% for (date,mealcombo) in meals %}
-        <div class="card border-primary mb-3" style="max-width: 40rem;">
+        <div class="card border-primary mb-3" style="max-width: 40rem;margin:auto;">
             {% if today.to_string() == mealcombo.date.to_string() %}
                 <div class="card-header"><h3>Today</h3></div>
             {% else %}
