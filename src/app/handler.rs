@@ -5,6 +5,8 @@ use crate::usda::search::Food; // bring trait in scope
 use askama::Template;
 use axum::extract::Path;
 use axum::http::{Response, StatusCode};
+use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
+use crate::models::user::{User, UserType};
 
 #[derive(Template)] // this will generate the code...
 #[template(path = "product/search_response_food.html")] // using the template in this path, relative
@@ -13,6 +15,24 @@ struct SearchResponseTemplate<'a> {
     // the name of the struct can be anything
     meal_id: &'a str,
     foods: Vec<Food>,
+}
+
+pub async fn home_handler(oidc_claims: OidcClaims<EmptyAdditionalClaims>,) -> Response<String> {
+    let mut con = crate::db::connector::get_connection()
+        .expect("Could not connect to redis,maybe redis is not running");
+    let mut user = User::check_if_exists_or_create(&mut con, oidc_claims).unwrap();
+    if let UserType::Nutritionist(_) = user.user_type {
+        return Response::builder()
+            .status(StatusCode::SEE_OTHER)
+            .header("Location", "/nutritionist")
+            .body("".to_string())
+            .unwrap();
+    }
+    return Response::builder()
+        .status(StatusCode::SEE_OTHER)
+        .header("Location", "/meals")
+        .body("".to_string())
+        .unwrap();
 }
 
 pub async fn search_usda_handler(

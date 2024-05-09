@@ -20,7 +20,7 @@ mod tests {
         let test_meal = meal::Meal {
             contents: vec![],
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e9").unwrap(),
-            user_id: "12345".to_string(),
+            username: "12345".to_string(),
             date: chrono::Utc::now(),
             meal_type: meal::MealType::Breakfast,
         };
@@ -55,7 +55,7 @@ mod tests {
             meal_type: meal::MealType::Breakfast,
             contents: vec![],
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e7").unwrap(),
-            user_id: "12345".to_string(),
+            username: "12345".to_string(),
             date: chrono::Utc::now(),
         };
         let mut con = connector::get_connection()

@@ -342,11 +342,11 @@ mod tests {
             .expect("Could not connect to redis,maybe redis is not running");
         let mut meal = models::meal::Meal::example();
         meal.id = Uuid::new_v4();
-        meal.user_id = "12345".to_string();
+        meal.username = "12345".to_string();
         meal.save(&mut con).expect("DIDNT SAVE");
 
         let mut meal = models::meal::Meal::fetch_from_uuid(&mut con, &meal.id.to_string()).unwrap();
-        assert_eq!(meal.user_id, "12345");
+        assert_eq!(meal.username, "12345");
     }
 
     #[tokio::test]

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+{% for user in users %}
+<a href="/nutritionist/meals/user/{{user.id}}" >{{user.name}}</a><br>
+{% endfor %}
+{% endblock content %}

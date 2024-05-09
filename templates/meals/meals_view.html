@@ -12,49 +12,54 @@
 </style>
 <div class="container mt-5 p-3">
     <div class="column justify-content-center">
+        {% if is_nutritionist %}
+        <h2>Meals of {{username}}</h2>
+        {% endif %}
         {% for (date,mealcombo) in meals %}
         <div class="card border-primary mb-3" style="max-width: 40rem;margin:auto;">
             {% if today.to_string() == mealcombo.date.to_string() %}
                 <div class="card-header"><h3>Today</h3></div>
             {% else %}
-                <div class="card-header"><h3>{{today}}</h3></div>
+                <div class="card-header"><h3>{{date}}</h3></div>
             {% endif %}
             <div class="card-body">
                 <h4 class="card-title"></h4>
                 {% if let Some(meal) = mealcombo.breakfast %}
                 <div>
-                    <a href='/meals/{{meal.id}}' class="btn btn-primary btn-lg btnw">Breakfast</a>
+                    <a href='{% if is_nutritionist %}/nutritionist{% endif %}/meals/{{meal.id}}' class="btn btn-primary btn-lg btnw">Breakfast</a>
                 </div>
                 {% endif %}
                 {% if let Some(meal) = mealcombo.lunch %}
                 <div>
-                    <a href='/meals/{{meal.id}}' class="btn btn-secondary btn-lg btnw">Lunch</a>
+                    <a href='{% if is_nutritionist %}/nutritionist{% endif %}/meals/{{meal.id}}' class="btn btn-secondary btn-lg btnw">Lunch</a>
                 </div>
                 {% endif %}
                 {% if let Some(meal) = mealcombo.dinner %}
                 <div>
-                    <a href='/meals/{{meal.id}} 'class="btn btn-success btn-lg btnw">Dinner</a>
+                    <a href='{% if is_nutritionist %}/nutritionist{% endif %}/meals/{{meal.id}} 'class="btn btn-success btn-lg btnw">Dinner</a>
                 </div>
                 {% endif %}
                 {% if let Some(snack) = mealcombo.snack %}
                 <div>
-                    <a href='/meals/{{snack.id}}' class="btn btn-warning btn-lg btnw">Snack</a>
+                    <a href='{% if is_nutritionist %}/nutritionist{% endif %}/meals/{{snack.id}}' class="btn btn-warning btn-lg btnw">Snack</a>
                 </div>
                 {% endif %}
-                {% if let None = mealcombo.breakfast %}
-                <a href="/newmeal/breakfast/{{mealcombo.date}}" class="btn sp btn-primary">Add Breakfast</a>
-                {% endif %}
-                {% if let None = mealcombo.lunch %}
-                <a href="/newmeal/lunch/{{mealcombo.date}}" class="btn sp btn-secondary">Add Lunch</a>
-                {% endif %}
-                {% if let None = mealcombo.dinner %}
-                <a href="/newmeal/dinner/{{mealcombo.date}}" class="btn sp btn-success">Add Dinner</a>
-                {% endif %}
-                {% if let None = mealcombo.snack %}
-                <a href="/newmeal/snack/{{mealcombo.date}}" class="btn sp btn-warning">Add Snack</a>
+                {% if !is_nutritionist %}
+                    {% if let None = mealcombo.breakfast %}
+                    <a href="/newmeal/breakfast/{{mealcombo.date}}" class="btn sp btn-primary">Add Breakfast</a>
+                    {% endif %}
+                    {% if let None = mealcombo.lunch %}
+                    <a href="/newmeal/lunch/{{mealcombo.date}}" class="btn sp btn-secondary">Add Lunch</a>
+                    {% endif %}
+                    {% if let None = mealcombo.dinner %}
+                    <a href="/newmeal/dinner/{{mealcombo.date}}" class="btn sp btn-success">Add Dinner</a>
+                    {% endif %}
+                    {% if let None = mealcombo.snack %}
+                    <a href="/newmeal/snack/{{mealcombo.date}}" class="btn sp btn-warning">Add Snack</a>
+                    {% endif %}
                 {% endif %}
                 <hr>
-                [Placeholder] kcal
+                [Placeholder] kcal, {{mealcombo.username}}
             </div>
         </div>
 

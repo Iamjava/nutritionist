@@ -1,5 +1,5 @@
 use crate::app::forms::ProductForm;
-use crate::app::meal_handler::{handle_create_meal, handle_meals};
+use crate::app::meal_handler::{handle_allmeals, handle_create_meal, handle_meals, handle_subuser_meal, handle_subuser_meals, handle_subusers, handle_subusers_view};
 use crate::app::{handler, meal_handler};
 use axum::error_handling::HandleErrorLayer;
 use axum::extract::Path;
@@ -15,6 +15,7 @@ use tower_sessions::{
     cookie::{time::Duration, SameSite},
     Expiry, MemoryStore, SessionManagerLayer,
 };
+use crate::app::handler::home_handler;
 
 // static once cell for Templates with tera
 
@@ -57,13 +58,7 @@ pub async fn serve() {
     let app = Router::new()
         .route(
             "/",
-            get(|| async {
-                Response::builder()
-                    .status(StatusCode::SEE_OTHER)
-                    .header("Location", "/meals")
-                    .body("".to_string())
-                    .unwrap()
-            }),
+            get(home_handler),
         )
         .route("/:id/search", post(handler::search_usda_handler))
         .route(
@@ -71,6 +66,10 @@ pub async fn serve() {
             get(handle_create_meal),
         )
         .route("/meals", get(handle_meals))
+        .route("/nutritionist", get(handle_subusers))
+        .route("/nutritionist/meals/user/:username", get(handle_subuser_meals))
+        .route("/nutritionist/meals/:id", get(handle_subusers_view))
+        .route("/allmeals", get(handle_allmeals))
         .route(
             "/meals/:id/search",
             get(|id: Path<String>| async { meal_handler::handle_search_meal_add(id).await }),

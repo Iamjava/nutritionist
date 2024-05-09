@@ -1,3 +1,5 @@
+use std::cmp::PartialEq;
+use axum_oidc::{EmptyAdditionalClaims, OidcClaims};
 use crate::db;
 use crate::models::meal::Meal;
 use crate::models::models::RedisORM;
@@ -9,6 +11,14 @@ pub(crate) struct User {
     pub(crate) id: String,
     pub(crate) name: String,
     pub(crate) email: String,
+    pub(crate) user_type: UserType,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum UserType{
+    User,
+    Nutritionist(Vec<String>),
+    Admin
 }
 
 impl RedisORM for User {
@@ -20,6 +30,7 @@ impl RedisORM for User {
             id: "12345".to_string(),
             name: "TEST".to_string(),
             email: "test@test.de".to_string(),
+            user_type: UserType::User,
         }
     }
 
@@ -32,21 +43,46 @@ impl RedisORM for User {
     }
 }
 
+
 impl User {
-    pub(crate) fn check_if_exists_or_create(
+
+    pub(crate) fn check_if_exists_by_id(
         con: &mut Connection,
         id: &str,
-        name: &str,
-        email: &str,
-    ) -> Result<User, RedisError> {
+    ) -> Result<User, String> {
         let user = User::fetch_from_uuid(con, id);
+        let name= id.clone();
+        let email = "test@test.de";
         if user.is_some() {
-            return Ok(user.unwrap());
+            let mut user = user.unwrap();
+            return Ok(user);
+        }
+        return Err("User not found".into());
+    }
+    pub(crate) fn check_if_exists_or_create(
+        con: &mut Connection,
+        oidc_claims: OidcClaims<EmptyAdditionalClaims>
+    ) -> Result<User, RedisError> {
+        let id = oidc_claims.preferred_username().expect("username broken");
+        let user = User::fetch_from_uuid(con, id);
+        let name= id.clone();
+        let email = "test@test.de";
+        dbg!(name.to_string(),name.to_string() == "jan");
+        let user_type = if name.to_string() == "jan" {
+            UserType::Nutritionist(vec!["jan".to_string()])
+        } else {
+            UserType::User
+        };
+        if user.is_some() {
+            let mut user = user.unwrap();
+            user.user_type = user_type;
+            return Ok(user);
         }
         let user = User {
             id: id.to_string(),
             name: name.to_string(),
             email: email.to_string(),
+            user_type,
         };
         user.save(con)?;
         return Ok(user);

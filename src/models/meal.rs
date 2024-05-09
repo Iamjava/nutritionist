@@ -15,7 +15,7 @@ use uuid::Uuid;
 pub(crate) struct Meal {
     pub(crate) contents: Vec<MealContent>,
     pub(crate) id: Uuid,
-    pub(crate) user_id: String,
+    pub(crate) username: String,
     pub(crate) date: chrono::NaiveDate,
     pub(crate) meal_type: MealType,
 }
@@ -27,6 +27,7 @@ pub(crate) struct DailyMealCombo {
     pub(crate) lunch: Option<Meal>,
     pub(crate) dinner: Option<Meal>,
     pub(crate) snack: Option<Meal>,
+    pub(crate) username: String,
 }
 
 impl Meal {
@@ -37,6 +38,7 @@ impl Meal {
         self.meal_type.to_string()
     }
 }
+
 impl DailyMealCombo {
     pub fn to_date(&self) -> String {
         self.date.to_string()
@@ -47,6 +49,7 @@ impl DailyMealCombo {
         let mut lunch = None;
         let mut dinner = None;
         let mut snack = None;
+        let  username = meals.iter().next().unwrap().username.clone();
         let date = meals[0].date;
         for meal in meals.into_iter() {
             match meal.meal_type {
@@ -56,12 +59,13 @@ impl DailyMealCombo {
                 MealType::Snack => snack = Some(meal),
             }
         }
-        DailyMealCombo {
+            DailyMealCombo {
             date,
             breakfast,
             lunch,
             dinner,
             snack,
+            username,
         }
     }
 
@@ -135,15 +139,25 @@ impl Meal {
     fn add_meal_to_user(&self, con: &mut Connection, user_id: &str) {
         db::connector::add_to_set(
             con,
-            "meals:".to_string() + &*self.user_id,
+            "meals:".to_string() + &*self.username,
             self.id.to_string(),
         )
         .unwrap()
     }
+
+    pub fn get_meals_for_user(con: &mut Connection, user_id: &str) -> Vec<Meal> {
+        let mut meals = vec![];
+        let meal_ids = db::connector::get_set(con, "meals:".to_string() + user_id);
+        for meal_id in meal_ids {
+            let meal = Meal::fetch_from_uuid(con, &meal_id).unwrap();
+            meals.push(meal);
+        }
+        meals
+    }
     fn remove_meal_from_user(&self, con: &mut Connection, user_id: &str) {
         db::connector::remove_from_set(
             con,
-            "meals:".to_string() + &*self.user_id,
+            "meals:".to_string() + &*self.username,
             self.id.to_string(),
         )
         .unwrap()
@@ -155,8 +169,8 @@ impl RedisORM for Meal {
     where
         Self: Serialize,
     {
-        let id = self.user_id.to_string() + ":" + &*self.id.to_string();
-        self.add_meal_to_user(con, &self.user_id);
+        let id = self.username.to_string() + ":" + &*self.id.to_string();
+        self.add_meal_to_user(con, &self.username);
         default_save(
             con,
             Self::redis_type_name().as_str(),
@@ -170,7 +184,7 @@ impl RedisORM for Meal {
         Meal {
             contents: vec![],
             id: Uuid::new_v4(),
-            user_id: "12345".to_string(),
+            username: "12345".to_string(),
             date: chrono::Utc::now().date_naive(),
             meal_type: MealType::Breakfast,
         }
