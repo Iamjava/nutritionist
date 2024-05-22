@@ -13,6 +13,7 @@ mod tests {
     use crate::models::meal;
     use crate::models::models::RedisORM;
     use std::str::FromStr;
+    use chrono::{NaiveDate, NaiveDateTime};
     use uuid::Uuid;
 
     #[tokio::test]
@@ -21,7 +22,7 @@ mod tests {
             contents: vec![],
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e9").unwrap(),
             username: "12345".to_string(),
-            date: chrono::Utc::now(),
+            date: NaiveDate::from(NaiveDateTime::from_timestamp(0, 0)),
             meal_type: meal::MealType::Breakfast,
         };
         let mut con = connector::get_connection()
@@ -56,7 +57,7 @@ mod tests {
             contents: vec![],
             id: Uuid::from_str("0ff3917f-14a6-4d82-8d40-4a96cc6fc5e7").unwrap(),
             username: "12345".to_string(),
-            date: chrono::Utc::now(),
+            date: NaiveDate::from(NaiveDateTime::from_timestamp(0, 0)),
         };
         let mut con = connector::get_connection()
             .expect("Could not connect to redis,maybe redis is not running");

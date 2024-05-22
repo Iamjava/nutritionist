@@ -64,12 +64,14 @@
         </div>
 
         {% endfor %}
-
         {% if  !today_has_meal %}
+            <div style="margin: 0 auto;width: 350px">
+                <button style="width: 100%" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal"  >
+                    Add Meal for Today
+                </button>
+
+            </div>
             <!-- Button trigger modal -->
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal">
-                Add Meal for Today
-            </button>
 
             <!-- Modal -->
             <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">

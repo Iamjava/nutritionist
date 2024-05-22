@@ -8,6 +8,7 @@
 {% block content %}
 
 <div class="container mt-5">
+    <a class="btn btn-primary" href="{% if is_nutritionist%}/nutritionist/meals/user/{{meal.username}}{% else %}/meals{% endif %}">Back</a>
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <h1 class="text-center">Meal {{ meal }} </h1>
@@ -15,7 +16,7 @@
                 <tbody>
                 {% for content in meal.contents %}
                 <tr>
-                    <td>{{ content.product.description }}</td>
+                    <td>{{ content.product.format_name() }}</td>
                     <td>{{ content.quantity }}g</td>
                     {% if edit %}
                     <td>

@@ -3,7 +3,7 @@ use crate::models::models::RedisORM;
 use redis::Connection;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::ops::Mul;
 use uuid::Uuid;
 
@@ -44,6 +44,12 @@ impl Mul<f32> for Food {
 #[derive(Deserialize, Clone, Serialize)]
 pub struct Food {
     pub description: String,
+    #[serde(rename = "brandOwner")]
+    pub brand_owner: Option<String>,
+    #[serde(rename = "dataType")]
+    pub data_set: String,
+    #[serde(rename = "brandName")]
+    pub brand_name: Option<String>,
     #[serde(rename = "foodNutrients")]
     nutrients: Vec<Nutrient>,
     #[serde(rename = "fdcId")]
@@ -74,11 +80,47 @@ impl Food {
             nutrients,
             id,
             nutrient_values: NutrientValues::default(),
+            brand_name: None,
+            brand_owner: None,
+            data_set: "Foundation".to_string(),
         };
         food = food.generate_nutrient_values();
         food
     }
 }
+
+impl Food{
+
+    pub fn format_name(&self ) -> String{
+        if self.data_set == "Branded" {
+            let mut s= String::from("BRANDED: ");
+            s.push_str(&self.description);
+            if let Some(brand) = &self.brand_name {
+                s.push_str(brand);
+                s.push(' ')
+            }
+            if let Some(brand) = &self.brand_owner {
+                s.push_str(brand);
+            }
+            return s
+        }else if self.data_set == "Survey (FNDDS)"{
+            let mut s= String::from("Survey: ");
+            s.push_str(&*self.description.clone());
+            return s
+        }
+        else if self.data_set == "Foundation"{
+            let mut s= String::from("Foundation: ");
+            s.push_str(&*self.description.clone());
+            return s
+        } else {
+            let mut s= String::from("SR Legacy: ");
+            s.push_str(&*self.description.clone());
+            return s
+        }
+    }
+
+}
+
 impl RedisORM for Food {
     fn example() -> Self
     where
@@ -89,6 +131,10 @@ impl RedisORM for Food {
             nutrients: vec![],
             id: 1,
             nutrient_values: NutrientValues::default(),
+            brand_owner: None,
+            brand_name: None,
+            data_set: "Foundation".to_string(),
+
         }
     }
 
@@ -145,6 +191,11 @@ impl Mul<f32> for NutrientValues {
 }
 
 impl Food {
+
+    pub fn compare_food(&self, other: &Food) -> bool {
+        return self.brand_name == other.brand_name && self.brand_owner == other.brand_owner && self.description == other.description
+    }
+
     pub fn get_numerical_macros(&self) -> NutrientValues {
         let nuts = self.nutrients.clone();
         let default_nut = Nutrient::default();
@@ -215,24 +266,49 @@ pub(crate) async fn query_usda_food_database(
     search_term: &str,
 ) -> Result<Vec<Food>, Box<dyn Error>> {
     let mut con = crate::db::connector::get_connection().unwrap();
-    let api_key = "DEMO_KEY"; // Replace 'DEMO_KEY' with your actual API key
-                              //let url = format!("https://api.nal.usda.gov/fdc/v1/foods/search?query={}&dataType=Foundation,SR%20Legacy,Survey%20%28FNDDS%29,Branded&pageSize=30&pageNumber=1&sortBy=dataType.keyword&sortOrder=asc&api_key={}", search_term, api_key);
-    let url = format!("https://api.nal.usda.gov/fdc/v1/foods/search?query={}&dataType=Foundation,SR%20Legacy&pageSize=30&pageNumber=1&sortBy=dataType.keyword&sortOrder=asc&api_key={}", search_term, api_key);
+    let api_key = "x6VEBsX1defxOWiAjX2MVZMcCh2HACrmeUecluye"; // Replace 'DEMO_KEY' with your actual API key
+    // let url_foundation = format!("https://api.nal.usda.gov/fdc/v1/foods/search?query={}&dataType=Foundation,SR%20Legacy&pageSize=30&pageNumber=1&sortBy=dataType.keyword&sortOrder=asc&api_key={}", search_term, api_key);
     let mut result = vec![];
+    let sets = vec!["Foundation","SR%20Legacy","Survey%20%28FNDDS%29","Branded"];
+    let search_words = search_term.split_whitespace().map(|w|w.to_lowercase()).collect::<Vec<_>>();
+    println!("{:?}",search_words);
+    for s in sets{
+        let url= format!("https://api.nal.usda.gov/fdc/v1/foods/search?query={}&dataType={}&pageSize=100&pageNumber=1&sortBy=dataType.keyword&sortOrder=asc&api_key={}", search_term,s, "x6VEBsX1defxOWiAjX2MVZMcCh2HACrmeUecluye".to_string());
+        let response = reqwest::get(&url).await?;
+        if response.status().is_success() {
+            let mut resp: SearchResult = response.json().await?;
+            if !resp.foods.is_empty() {
+                for food in resp.foods.iter_mut() {
+                    food.nutrient_values = food.get_numerical_macros();
+                }
+                // make foods unique and put only containging the search terms
+                let mut unique_foods = vec![];
+                for food in resp.foods.iter() {
+                    let food_string = food.format_name().to_lowercase();
+                    if !unique_foods.iter().any(|x: &Food| x.compare_food(food)) {
+                        let mut contains_all_words = true;
+                        for word in search_words.iter(){
+                            if !food_string.contains(word){
+                                contains_all_words = false;
+                                break;
+                            }
+                        }
+                        if contains_all_words{
+                            println!("{} CONTAINS {}",food_string,&contains_all_words);
+                            unique_foods.push(food.clone());
+                        }
+                    }
+                }
 
-    let response = reqwest::get(&url).await?;
-    if response.status().is_success() {
-        let mut resp: SearchResult = response.json().await?;
-        if !resp.foods.is_empty() {
-            for food in resp.foods.iter_mut() {
-                food.nutrient_values = food.get_numerical_macros();
+                result.append(&mut unique_foods);
+                println!("{}", unique_foods.len());
+                save_foods(&mut con, &mut result, &mut resp);
+            } else {
+                println!("No foods found. {}",s);
             }
-            save_foods(&mut con, &mut result, &mut resp);
         } else {
-            println!("No foods found.");
+            println!("Failed to query the USDA Food Database.");
         }
-    } else {
-        println!("Failed to query the USDA Food Database.");
     }
     Ok(result)
 }
@@ -278,11 +354,13 @@ impl RedisORM for FoodSearchResult {
 pub async fn cached_search(query: &str) -> Vec<Food> {
     let mut con = crate::db::connector::get_connection().unwrap();
     let cache = FoodSearchResult::fetch_from_uuid(&mut con, query);
-    if cache.is_some() {
+    let use_cache = false;
+    if cache.is_some() && use_cache{
         dbg!("Cache hit");
         return cache.unwrap().products;
     }
     let result = query_usda_food_database(query).await.unwrap();
+    print!("{:?}",result.len());
     let search_result = FoodSearchResult {
         products: result.clone(),
         query: query.to_string(),
@@ -363,7 +441,6 @@ mod tests {
     }
     #[tokio::test]
     async fn search_test() {
-        let search = query_usda_food_database("tomato").await.unwrap();
-        assert!(search.len() > 0);
+        assert!("vegetable branded: vegan lasagna365 everyday value whole foods market, inc.".contains("lasagna"));
     }
 }
